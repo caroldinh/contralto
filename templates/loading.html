@@ -32,45 +32,12 @@
   <img id="header-icon-faded" src="{{ url_for('static', filename='images/headphones.svg') }}" alt="headphones icon">
     <img class="header-image" src="{{ url_for('static',filename='images/contralto.svg') }}" alt="Contralto!">
     <h2>Whose voices are in your mix?</h2>
+    <p id="playlist-name"></p>
     <div id="progress-bar"><div id="progress"><p id="progress-percent"></p></div></div>
+    <p class="caption">Analyzing...</p>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script>
-      window.onload = function checkProgress(){
-        console.log($("#progressBar").text());
-        let pageUrl = window.location.href;
-        pageUrl = pageUrl.split('/');
-        let id = pageUrl[pageUrl.length - 1];
-
-        if($("#progress-percent").text() != "100%"){
-          $.ajax({
-            url: "/analyzer-progress/" + id,
-            type: "get",
-            success: function(response) {
-              $("#progress-percent").text(parseInt(response * 100) + "%");
-              $("#progress").css('width', (parseInt(response * 100)) + "%");
-              checkProgress();
-            },
-            error: function(xhr) {
-              //Do Something to handle error
-            }
-          });
-        } else {
-          $.ajax({
-            url: "/analyzer-result/" + id,
-            type: "get",
-            success: function(response) {
-              $("#progress-percent").text(parseInt(response * 100) + "%");
-              $("#progress").css('width', (parseInt(response * 100)) + "%");
-              window.location.href=(id + '/result/')
-            },
-            error: function(xhr) {
-              //Do Something to handle error
-            }
-          });
-        }
-      }
-    </script>
+    <script src="{{ url_for('static', filename='scripts/loading.js') }}"></script>
 
 </body>
 </html>

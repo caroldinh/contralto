@@ -73,8 +73,14 @@ def analyze(artist, individual=False):
                     result = analyze(member_name, individual=True)
                     if(result != "Undetermined"):
                         member_searches.append(result)
-                if(len(member_searches) > 0):
-                    return statistics.mode(member_searches)
+                unique = set(member_searches)
+                if(len(unique) > 0):
+                    if(len(unique) > 2):
+                        return "Mixed-gender"
+                    else:
+                        return unique.pop()
+                else:
+                    return "Undetermined"
         else:
             return tags_analysis
 
@@ -109,5 +115,3 @@ def analyze_based_on_tags(artist):
             return "Male or male-fronted"
     
     return "Undetermined"
-
-#main()

@@ -1,3 +1,8 @@
+@font-face {
+    font-family: 'Co Headline';
+    src: url(/static/fonts/CoHeadlineCorpRegular.ttf);
+}
+
 :root{
     --background-color: #EADED7;
     --header-color: #4A4A4A;
@@ -5,7 +10,8 @@
     --text-color-light: #A7A7A7;
     --dark-pink: #E870A7;
     --light-orange: #E9B39B;
-    --header-font: 'Rammetto One', cursive;
+    --orange: #E77849;
+    --header-font: 'Co Headline', cursive;
     --body-font: 'Signika', sans-serif;
 }
 
@@ -30,6 +36,31 @@ h2{
     font-size: 2.5em;
     text-align: center;
     margin-top: 2vh;
+}
+
+h3{
+    font-family: var(--header-font);
+    font-size: 3em;
+    text-align: center;
+    color: var(--header-color);
+}
+
+p {
+    font-family: var(--body-font);
+    color: var(--body-text-color);
+    font-size: 2em;
+    text-align: center;
+    margin-top: 2vh; 
+    margin-bottom: 2vh;
+}
+
+#playlist-name {
+    font-family: var(--body-font);
+    color: var(--text-color-light);
+    font-size: 2em;
+    text-align: center;
+    margin-top: 2vh; 
+    margin-bottom: 2vh;
 }
 
 #header-icon{
@@ -84,7 +115,7 @@ h2{
     border: none;
     border-radius: 6vh;
     margin-top: 10vh;
-    margin-bottom: 10vh;
+    margin-bottom: 2vh;
     padding-right: 2vh;
     padding-left: 4vh;
     padding-top: 2vh;
@@ -129,7 +160,7 @@ h2{
     border: none;
     border-radius: 6vh;
     margin-top: 10vh;
-    margin-bottom: 10vh;
+    margin-bottom: 2vh;
     padding-right: 4vh;
     padding-left: 4vh;
     padding-top: 2vh;
@@ -155,4 +186,61 @@ h2{
     position: relative;
     float: center;
     margin: auto;
+}
+
+.caption{
+    color: var(--text-color-light);
+    font-weight: lighter;
+    font-size: 1.5em;
+}
+
+.orange {
+    color: var(--orange);
+}
+
+.dark-pink {
+    color: var(--dark-pink);
+}
+
+#result-section-1{
+    display: table;
+}
+
+.flex-col{
+    float: left;
+    position: relative;
+    width: 50%;
+    margin-top: 20vh;
+    margin-bottom: 20vh;
+}
+
+#result-message{
+    max-width: 100%;
+    padding-left: 30%;
+    text-align: right;
+    font-size: 4vw;
+}
+
+#playlist-cover{
+    width: 25vw;
+    border-radius: 10%;
+    margin-left: 5vw;
+}
+
+#display-playlist-name{
+    font-family: var(--header-font);
+    font-size: 2.4vw;
+    text-align: center;
+    margin-right: 15vw;
+    margin-bottom: 0vh;
+}
+
+#display-playlist-info{
+    font-family: var(--header-font);
+    color: var(--text-color-light);
+    font-size: 1.5vw;
+    text-align: center;
+    margin-right: 15vw;
+    margin-top: 0;
+    margin-bottom: 0;
 }

@@ -30,7 +30,19 @@
 
 <body>
   
-    <p id="result">{{result}}</p>
+    <div id="result-secton-1">
+      <div class="flex-col"><p id="result-message"><span class="dark-pink">{{result}}%</span> of this playlist is led by a gender-minority artist.</p></div>
+      <div class="flex-col">
+        <img id="playlist-cover" src="{{playlist['images'][0]['url']}}">
+        <p id="display-playlist-name">{{playlist['name']}}</p>
+        <p id="display-playlist-info">by {{playlist['owner']['display_name']}}</p>
+        <p id="display-playlist-info">{{playlist['tracks']['items'] | length}} songs</p>
+      </div> 
+        
+    <div id="result-secton-2">
+      <img class="header-image" src="{{ url_for('static', filename='images/LetsBreakItDown.svg') }}">
+      
+    </div> 
 
 </body>
 </html>
