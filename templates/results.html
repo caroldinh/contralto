@@ -38,11 +38,48 @@
         <p id="display-playlist-info">by {{playlist['owner']['display_name']}}</p>
         <p id="display-playlist-info">{{playlist['tracks']['items'] | length}} songs</p>
       </div> 
-        
+      
+    </div>
+
     <div id="result-secton-2">
       <img class="header-image" src="{{ url_for('static', filename='images/LetsBreakItDown.svg') }}">
-      <div id="chart-container"><canvas id="artists-chart"></canvas></div>
+      <div id="chart-container" class="flex-col"><canvas id="artists-chart"></canvas></div>
+      <div id="chart-label" class="flex-col">
+        <div class="label-item">
+          <span class="dot fill-blue"></span>
+          <p>Male artists</p>
+        </div>
+        <div class="label-item">
+          <span class="dot fill-orange"></span>
+          <p>Gender-minority artists</p>
+        </div>
+        <div class="label-item">
+          <span class="dot fill-purple"></span>
+          <p>Mixed-gender groups</p>
+        </div>
+        <div class="label-item">
+          <span class="dot fill-pink"></span>
+          <p>Undetermined</p>
+        </div>
+      </div>
     </div> 
+
+    <div id="result-section-3">
+      <div id="male-artists" class="flex-col">
+        <h3>Male artists</h3>
+        <div class="artists-list"></div>
+      </div>
+      <div id="underrep-artists" class="flex-col">
+        <h3>Female & nonbinary artists</h3>
+        <div class="artists-list"></div>
+      </div><br>
+      <div id="mixed-gender">
+        <h3 id="mixed-gender-header">Mixed-gender groups</h3>
+        <div class="artists-list"></div>
+      </div>
+      <div id="undetermined">
+        <p class="caption">Undetermined: <span id="undetermined-artists"></span></p>
+      </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha512-TW5s0IT/IppJtu76UbysrBH9Hy/5X41OTAbQuffZFU6lQ1rdcLHzpU5BzVvr/YFykoiMYZVWlr/PX1mDcfM9Qg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>

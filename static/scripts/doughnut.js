@@ -50,6 +50,35 @@ window.onload = function displayChart(){
             };
 
             const myChart = new Chart(ctx, config);
+
+            const maleArtists = document.getElementById("male-artists").getElementsByClassName("artists-list")[0];
+            Object.values(response.male_led).forEach(function(element){
+                let artist = document.createElement("span");
+                artist.className = "male-artist";
+                artist.innerText=element;
+                maleArtists.appendChild(artist);
+            });
+
+            const underrepArtists = document.getElementById("underrep-artists").getElementsByClassName("artists-list")[0];
+            Object.values(response.underrepresented).forEach(function(element){
+                let artist = document.createElement("span");
+                artist.className = "underrep-artist";
+                artist.innerText=element;
+                underrepArtists.appendChild(artist);
+            });
+
+            const mixedGenderGroups = document.getElementById("undetermined-artists");
+            let count = 0;
+            Object.values(response.undetermined).forEach(function(element){
+                let artist = document.createElement("span");
+                if(count == Object.values(response.undetermined).length - 1){
+                    artist.innerText=element;
+                } else {
+                    artist.innerText=element + ", ";
+                }
+                mixedGenderGroups.appendChild(artist);
+                count++;
+            });
         },
         error: function(xhr) {
             //Do Something to handle error

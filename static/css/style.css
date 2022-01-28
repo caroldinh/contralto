@@ -11,6 +11,12 @@
     --dark-pink: #E870A7;
     --light-orange: #E9B39B;
     --orange: #E77849;
+    --orange-rgb: 231, 120, 73;
+    --blue: #74B6F1;
+    --blue-rgb: 116, 182, 241;
+    --purple: #D287D8;
+    --purple-rgb: 210, 135, 216;
+    --medium-pink: #F0BDD0;
     --header-font: 'Co Headline', cursive;
     --body-font: 'Signika', sans-serif;
 }
@@ -48,7 +54,7 @@ h3{
 p {
     font-family: var(--body-font);
     color: var(--body-text-color);
-    font-size: 2em;
+    font-size: 2vw;
     text-align: center;
     margin-top: 2vh; 
     margin-bottom: 2vh;
@@ -146,7 +152,7 @@ p {
     transition: 0.3s;
 }
 
-#submit-playlist:hover{
+#submit-playlist:hover {
     filter: brightness(0.7);
     cursor: pointer;
 }
@@ -191,7 +197,7 @@ p {
 .caption{
     color: var(--text-color-light);
     font-weight: lighter;
-    font-size: 1.5em;
+    font-size: 1.5vw;
 }
 
 .orange {
@@ -202,8 +208,8 @@ p {
     color: var(--dark-pink);
 }
 
-#result-section-1{
-    display: table;
+#result-secton-1{
+    height: 100vh;
 }
 
 .flex-col{
@@ -211,7 +217,6 @@ p {
     position: relative;
     width: 50%;
     margin-top: 20vh;
-    margin-bottom: 20vh;
 }
 
 #result-message{
@@ -245,10 +250,157 @@ p {
     margin-bottom: 0;
 }
 
+#result-section-2{
+    display: flex;
+}
+
 #chart-container{
     width: 35vw;
-    height: 35vw;
-    margin-left: 10vw;
-    margin-top: 3vw;
-    margin-bottom: 5vw;
+    margin-left: 15vw;
+    margin-top: 10vh;
+    margin-bottom: 5vh;
+}
+
+#chart-label{
+    width: 35vw;
+    padding-left: 5vw;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 20vh;
+}
+
+.label-item{
+    margin-bottom: 2vh;
+}
+
+.label-item p{
+    display: inline;
+    text-align: left;
+    margin-left: 1vw;
+}
+
+.dot {
+    display: inline;
+    height: 1.5vw;
+    width: 1.5vw;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid white;
+    transition: 0.3s;
+}
+
+.dot:hover, .male-artist:hover, .underrep-artist:hover, .mixed-group:hover {
+    filter: brightness(0.8);
+}
+
+.fill-blue{
+    background-color: var(--blue);
+}
+
+.fill-orange{
+    background-color: var(--orange);
+}
+
+.fill-purple{
+    background-color: var(--purple);
+}
+
+.fill-pink{
+    background-color: var(--medium-pink);
+}
+
+#male-artists{
+    margin-left: 10%;
+    width: 38%;
+    margin-right: 2%;
+    background-color: rgba(var(--blue-rgb), 0.4);
+    border-radius: 10vh;
+    margin-bottom: 2%;
+}
+
+#underrep-artists{
+    margin-right: 10%;
+    width: 38%;
+    margin-left: 2%;
+    background-color: rgba(var(--orange-rgb), 0.4);
+    border-radius: 10vh;
+    margin-bottom: 2%;
+}
+
+#mixed-gender{
+    display: flex;
+    width: 80%;
+    margin-right: 10%;
+    margin-left: 10%;
+    background-color: rgba(var(--purple-rgb), 0.4);
+    border-radius: 10vh;
+    margin-bottom: 1%;
+}
+
+#mixed-gender-header{
+    width: 20%;
+    margin-left: 10%;
+    margin-right: 5%;
+    text-align: left;
+}
+
+#male-artists h3, .artists-list{
+    margin-right: 10%;
+    margin-left: 10%;
+}
+
+#underrep-artists h3, .artists-list{
+    margin-right: 10%;
+    margin-left: 10%;
+}
+
+.artists-list{
+    margin-top: 5vh;
+    margin-bottom: 5vh;
+}
+
+.male-artist{
+    display: inline-block;
+    background-color: var(--blue);
+    font-family: var(--body-font);
+    color: white;
+    border-radius: 25px;
+    margin-right: 1vh;
+    margin-left: 1vh;
+    padding: 1vh;
+    margin-bottom: 1vh;
+    border: 0.5px solid white;
+    transition: 0.3s;
+}
+
+.underrep-artist{
+    display: inline-block;
+    background-color: var(--orange);
+    font-family: var(--body-font);
+    color: white;
+    border-radius: 25px;
+    margin-right: 1vh;
+    margin-left: 1vh;
+    padding: 1vh;
+    margin-bottom: 1vh;
+    border: 0.5px solid white;
+    transition: 0.3s;
+}
+
+.mixed-group{
+    display: inline-block;
+    background-color: var(--purple);
+    font-family: var(--body-font);
+    color: white;
+    border-radius: 25px;
+    margin-right: 1vh;
+    margin-left: 1vh;
+    padding: 1vh;
+    margin-bottom: 1vh;
+    border: 0.5px solid white;
+    transition: 0.3s;
+}
+
+#undetermined{
+    margin-bottom: 10vh;
 }
