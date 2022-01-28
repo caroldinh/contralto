@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template, redirect, url_for
-from bio_analyzer import analyze
+from analyzer import analyze
 import requests
 import sys
 import threading
@@ -21,8 +21,8 @@ class PlaylistAnalyzer(threading.Thread):
         super().__init__()
     
     def run(self): 
-        CLIENT_ID = os.environ['CLIENT_ID']
-        CLIENT_SECRET = os.environ['CLIENT_SECRET']
+        CLIENT_ID = os.getenv('CLIENT_ID')
+        CLIENT_SECRET = os.getenv('CLIENT_SECRET')
         AUTH_URL = 'https://accounts.spotify.com/api/token'
 
         # POST
@@ -57,18 +57,19 @@ class PlaylistAnalyzer(threading.Thread):
                 track_artists = track['track']['artists']
                 for artist in track_artists:
                     total += 1
+                    artist_id = artist['id']
                     artist_name = artist['name']
                     print(artist_name)
                     if(artist_name in artists_checked):
                         result = artists_checked[artist_name]
                     else:
-                        result = analyze(artist_name)
-                        if(result == "Female or female-fronted" or result == "Nonbinary or nonbinary-fronted"):
+                        result = analyze(artist_id, artist_name)
+                        if(result == "F" or result == "X"):
                             underrepresented += 1
                             self.artists['underrepresented'][artist['id']] = artist['name']
-                        elif(result == "Male or male-fronted"):
+                        elif(result == "M"):
                             self.artists['male_led'][artist['id']] = artist['name']
-                        elif(result == "Mixed-gender"):
+                        elif(result == "MIX"):
                             self.artists['mixed_gender'][artist['id']] = artist['name']
                         else:
                             self.artists['undetermined'][artist['id']] = artist['name']

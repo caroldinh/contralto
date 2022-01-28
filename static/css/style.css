@@ -244,3 +244,11 @@ p {
     margin-top: 0;
     margin-bottom: 0;
 }
+
+#chart-container{
+    width: 35vw;
+    height: 35vw;
+    margin-left: 10vw;
+    margin-top: 3vw;
+    margin-bottom: 5vw;
+}
