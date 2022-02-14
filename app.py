@@ -1,10 +1,13 @@
 from flask import Flask, request, render_template, redirect, url_for
-from analyzer import analyze
+from analyzer import analyze, update_recs_table, generate_rec
 import requests
 import sys
 import threading
 import os
 import logging
+import psycopg2
+from psycopg2 import OperationalError
+import random
 
 class PlaylistAnalyzer(threading.Thread):
     def __init__(self, id):
@@ -18,6 +21,12 @@ class PlaylistAnalyzer(threading.Thread):
             "mixed_gender":{},
             "undetermined":{}
         }
+        self.recs = {
+            "60-100":None,
+            "30-60":None,
+            "0-30":None
+        }
+        self.top_artists = []
         super().__init__()
     
     def run(self): 
@@ -53,35 +62,87 @@ class PlaylistAnalyzer(threading.Thread):
         if('items' in tracks):
             total_tracks = len(tracks['items'])
             current_track = 0
+            artist_result = 'UND'
+
+            # Start looping through all songs
             for track in tracks['items']:
                 track_artists = track['track']['artists']
                 for artist in track_artists:
                     total += 1
-                    artist_id = artist['id']
-                    artist_name = artist['name']
-                    print(artist_name)
-                    if(artist_name in artists_checked):
-                        result = artists_checked[artist_name]
-                    else:
-                        result = analyze(artist_id, artist_name)
-                        if(result == "F" or result == "X"):
+                    artist_info = requests.get(artist['href'], headers=headers).json()
+                    artist_id = artist_info['id']
+                    print(artist_info['name'])
+                    occurrences = 1
+                    if(artist_id in artists_checked):
+                        artist_result = artists_checked[artist_id]
+                        if(artist_result == "F" or artist_result == "X"):
                             underrepresented += 1
-                            self.artists['underrepresented'][artist['id']] = artist['name']
-                        elif(result == "M"):
-                            self.artists['male_led'][artist['id']] = artist['name']
-                        elif(result == "MIX"):
-                            self.artists['mixed_gender'][artist['id']] = artist['name']
+                            occurrences = self.artists['underrepresented'][artist_id]['occurrences'] + 1
+                            self.artists['underrepresented'][artist_id]['occurrences'] = occurrences
+                        elif(artist_result == "M"):
+                            occurrences = self.artists['male_led'][artist_id]['occurrences'] + 1
+                            self.artists['male_led'][artist_id]['occurrences'] = occurrences
+                        elif(artist_result == "MIX"):
+                            occurrences = self.artists['mixed_gender'][artist_id]['occurrences'] + 1
+                            self.artists['mixed_gender'][artist_id]['occurrences'] = occurrences
                         else:
-                            self.artists['undetermined'][artist['id']] = artist['name']
-                            artists_checked[artist_name] = result
-                    print(result)
+                            occurrences = self.artists['undetermined'][artist_id]['occurrences'] + 1
+                            self.artists['undetermined'][artist_id]['occurrences'] = occurrences
+                    else:
+                        artist_result = analyze(artist_info)
+                        artist_info['occurrences'] = 1
+                        if(artist_result == "F" or artist_result == "X"):
+                            underrepresented += 1
+                            self.artists['underrepresented'][artist['id']] = artist_info
+                        elif(artist_result == "M"):
+                            self.artists['male_led'][artist['id']] = artist_info
+                        elif(artist_result == "MIX"):
+                            self.artists['mixed_gender'][artist['id']] = artist_info
+                        else:
+                            self.artists['undetermined'][artist['id']] = artist_info
+                        artists_checked[artist_id] = artist_result
+                    if(len(self.top_artists) == 0):
+                        self.top_artists.append(artist_info)
+                    else:
+                        index = len(self.top_artists) - 1 
+                        while(self.top_artists[index]['id'] != artist_info['id'] and \
+                            self.top_artists[index]['occurrences'] < occurrences and index > 0):
+                            index -= 1
+                        if(self.top_artists[index]['id'] == artist_info['id']):
+                            self.top_artists[index]['occurrences'] = occurrences
+                        elif(index < len(self.top_artists) - 1):
+                            self.top_artists.insert(index, artist_info)
+                        if(len(self.top_artists) > 5):
+                            self.top_artists.pop()
+                    print("RESULT: " + artist_result)
                     print()
                 current_track += 1
                 self.progress = current_track / total_tracks
+            
+            self.result = str(round((underrepresented / total) * 100, 1))
+            # Go back through and update recommendations tables for artists in this playlist
+            for category in self.artists:
+                for outer_artist in self.artists[category]:
+                    for inner_artist in self.artists['underrepresented']:
+                        if(outer_artist == inner_artist):
+                            pass
+                        else:
+                            update_recs_table(self.artists[category][outer_artist], self.artists['underrepresented'][inner_artist])
+                    print()
 
             print()
-            self.result = str(round((underrepresented / total) * 100, 1))
-
+            rec_artists = []
+            for x in range(3):
+                rec_artist = random.choice(self.top_artists)
+                if(len(self.top_artists) > 3):
+                    self.top_artists.remove(rec_artist)
+            count = 0
+            for popularity in self.recs:
+                if(len(rec_artists) > count):
+                    self.recs[popularity] = generate_rec(rec_artists[count]['id'], popularity)
+                    if(self.recs[popularity] == None):
+                        self.recs[popularity] = generate_rec(rec_artists[count]['id'])
+            
         else:
             self.result = "Playlist not found"
 
@@ -153,6 +214,10 @@ def get_artists(playlist_id):
         return analyzers[playlist_id].artists
     else:
         return ""
+
+@app.route('/<artist_id>/recs-table/')
+def generate_recs_table(artist_id):
+    return generate_rec(artist_id)
 
 if __name__ == '__main__':
     app.run(threaded=True)

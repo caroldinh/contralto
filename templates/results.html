@@ -31,7 +31,8 @@
 <body>
   
     <div id="result-secton-1">
-      <div class="flex-col"><p id="result-message"><span class="dark-pink">{{result}}%</span> of this playlist is led by a gender-minority artist.</p></div>
+      <div class="flex-col"><p id="result-message"><span class="dark-pink">{{result}}%</span> of this playlist is led by a woman
+        or non-binary artist.</p></div>
       <div class="flex-col">
         <img id="playlist-cover" src="{{playlist['images'][0]['url']}}">
         <p id="display-playlist-name">{{playlist['name']}}</p>
@@ -43,19 +44,19 @@
 
     <div id="result-secton-2">
       <img class="header-image" src="{{ url_for('static', filename='images/LetsBreakItDown.svg') }}">
-      <div id="chart-container" class="flex-col"><canvas id="artists-chart"></canvas></div>
-      <div id="chart-label" class="flex-col">
+      <div id="chart-container"><canvas id="artists-chart"></canvas></div>
+      <div id="chart-label">
         <div class="label-item">
           <span class="dot fill-blue"></span>
-          <p>Male artists</p>
+          <p>Tracks by men</p>
         </div>
         <div class="label-item">
           <span class="dot fill-orange"></span>
-          <p>Gender-minority artists</p>
+          <p>Tracks by women and nonbinary artists</p>
         </div>
         <div class="label-item">
           <span class="dot fill-purple"></span>
-          <p>Mixed-gender groups</p>
+          <p>Tracks by mixed-gender groups</p>
         </div>
         <div class="label-item">
           <span class="dot fill-pink"></span>
@@ -66,11 +67,11 @@
 
     <div id="result-section-3">
       <div id="male-artists" class="flex-col">
-        <h3>Male artists</h3>
+        <h3>Men</h3>
         <div class="artists-list"></div>
       </div>
       <div id="underrep-artists" class="flex-col">
-        <h3>Female & nonbinary artists</h3>
+        <h3>Women and nonbinary</h3>
         <div class="artists-list"></div>
       </div><br>
       <div id="mixed-gender">
@@ -78,7 +79,29 @@
         <div class="artists-list"></div>
       </div>
       <div id="undetermined">
+        <br>
         <p class="caption">Undetermined: <span id="undetermined-artists"></span></p>
+      </div>
+
+      <div id="result-section-4">
+        <img class="header-image" src="{{ url_for('static', filename='images/Recommendations.svg') }}">
+        <div class="spacer"></div>
+        <p>These artists may be a good fit for your playlist:</p>
+        <div class="spacer"></div>
+        <div id="artist-recommendations">
+          <div class="artist-rec">
+            <div class="rec-cover" id="rec1-cover"></div>
+          </div>
+          <div class="artist-rec">
+            <div class="rec-cover" id="rec2-cover"></div>
+          </div>
+          <div class="artist-rec">
+            <div class="rec-cover" id="rec3-cover"></div>
+          </div>
+
+          </div>
+        </div>
+        <div class="spacer"></div>
       </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha512-TW5s0IT/IppJtu76UbysrBH9Hy/5X41OTAbQuffZFU6lQ1rdcLHzpU5BzVvr/YFykoiMYZVWlr/PX1mDcfM9Qg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>

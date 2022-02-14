@@ -198,6 +198,9 @@ p {
     color: var(--text-color-light);
     font-weight: lighter;
     font-size: 1.5vw;
+    width: 80%;
+    float: center;
+    margin: auto;
 }
 
 .orange {
@@ -251,22 +254,29 @@ p {
 }
 
 #result-section-2{
-    display: flex;
+    display: block;
+    overflow: auto;
 }
 
 #chart-container{
-    width: 35vw;
+    float: left;
+    position: relative;
+    width: 30vw !important;
     margin-left: 15vw;
     margin-top: 10vh;
-    margin-bottom: 5vh;
+    margin-bottom: 0;
+    height: 25vw;
 }
 
 #chart-label{
-    width: 35vw;
+    float: left;
+    position: relative;
+    width: 40vw !important;
     padding-left: 5vw;
     margin-top: 0;
     margin-bottom: 0;
     padding-top: 20vh;
+    height: 25vw;
 }
 
 .label-item{
@@ -403,4 +413,27 @@ p {
 
 #undetermined{
     margin-bottom: 10vh;
+}
+
+.spacer{
+    height: 8vh;
+}
+
+#artist-recommendations{
+   display:flex;
+   padding-right: 10vw;
+   padding-left: 10vw; 
+}
+
+.artist-rec{
+    background-color: rgba(var(--orange-rgb), 0.4);
+    width: 24vw;
+    margin-right: auto;
+    margin-left: auto;
+    height: 24vw;
+    border-radius: 10vh;
+}
+
+#result-section-3{
+    display: block;
 }

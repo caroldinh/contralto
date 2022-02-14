@@ -3,19 +3,82 @@ import requests
 import psycopg2
 from psycopg2 import OperationalError
 import os
+import random
+import json
 
 connection = None
 
-def analyze(id, artist):
+def analyze(artist_json):
     global connection
     connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
     connection.autocommit = True
-    db_result = analyze_from_database(id)
-    if(db_result == "UND"):
-        return analyze_via_crawl(id, artist)
-    else:
-        return db_result
+    id = artist_json['id']
+    artist = artist_json['name']
+    result = analyze_from_database(id)
+    if(result == "UND"):
+        result = analyze_via_crawl(id, artist)
+    create_recs_table = f"""
+        CREATE TABLE IF NOT EXISTS recs{id} (
+            spotify_id VARCHAR(128) NOT NULL PRIMARY KEY,
+            name TEXT NOT NULL, 
+            popularity TEXT NOT NULL,
+            picture TEXT,
+            matches INT NOT NULL
+        )
+    """
+    '''
+    try:
+        execute_query(f"DROP TABLE {id}")
+    except:
+        pass
+    '''
+    execute_query(create_recs_table)
+    return result
 
+def update_recs_table(table_artist, add_artist):
+    artist_row = execute_read_query(f"SELECT * from recs{table_artist['id']} WHERE spotify_id='{add_artist['id']}'")
+    artist_image = None
+    if(len(add_artist['images']) > 0):
+        artist_image = add_artist['images'][0]['url']
+    escaped_name = add_artist['name'].replace('\0', '\\0').replace('\'', '\'\'').replace('\"', '\"\"').replace('\b', '\\b').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace('\Z', '\\Z').replace('\\', '\\\\').replace('%', '\%').replace('_', '\_')
+    artist = {
+        "spotify_id":add_artist['id'],
+        "name":escaped_name,
+        "popularity":sort_artist(add_artist),
+        "picture":artist_image,
+        "matches":add_artist['occurrences']
+    }
+    if(artist_row == None):
+        query = f"INSERT INTO recs{table_artist['id']} (spotify_id, name, popularity, picture, matches) VALUES " + \
+            f"('{artist['spotify_id']}', '{artist['name']}', '{artist['popularity']}', '{artist['picture']}', {artist['matches']});"
+        execute_query(query)
+    else:
+        new_matches = add_artist['occurrences'] + artist_row[4]
+        query = f"UPDATE recs{table_artist['id']} SET popularity='{artist['popularity']}', picture='{artist['picture']}', matches={new_matches} " + \
+            f"WHERE spotify_id='{artist['spotify_id']}'"
+        execute_query(query)
+    artist_row = None
+
+def sort_artist(artist):
+    if(artist['popularity'] > 60):
+        return '60-100'
+    elif(artist['popularity'] > 30):
+        return '30-60'
+    else:
+        return '0-30'
+
+def generate_rec(id, popularity=None):
+    global connection
+    connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
+    connection.autocommit = True
+    recs_table = None
+    if(popularity == None):
+        recs_table = execute_read_multiple_query(f"SELECT * FROM recs{id}")
+    else:
+        recs_table = execute_read_multiple_query(f"SELECT * FROM recs{id} WHERE popularity='{popularity}'")
+    if(recs_table == None):
+        return None
+    return str(random.choice(recs_table))
 
 def analyze_via_crawl(id, artist, individual=False):
 
@@ -38,7 +101,6 @@ def analyze_via_crawl(id, artist, individual=False):
         paragraph_count += 1
 
     content = content[:paragraph_count]
-    # print(bio_short)
 
     masc_indicators = ['he', 'him', 'his', 'himself', 'frontman', 'boy']
     fem_indicators = ['she', 'her', 'hers', 'herself', 'female', 'female-fronted', 'frontwoman', 'girl']
@@ -121,7 +183,8 @@ def analyze_via_crawl(id, artist, individual=False):
         check_if_exists = execute_read_query(f"SELECT * FROM artists WHERE spotify_id='{id}'")
         query = ""
         if(check_if_exists == None):
-            query = f"INSERT INTO artists (spotify_id, name, consensus) VALUES ('{id}', '{artist}', '{result}');"
+            escaped_name = artist.replace('\0', '\\0').replace('\'', '\'\'').replace('\"', '\"\"').replace('\b', '\\b').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace('\Z', '\\Z').replace('\\', '\\\\').replace('%', '\%').replace('_', '\_')
+            query = f"INSERT INTO artists (spotify_id, name, consensus) VALUES ('{id}', '{escaped_name}', '{result}');"
         else:
             query = f"UPDATE artists SET consensus='{result}' WHERE spotify_id='{id}'"
         print(query)
@@ -160,7 +223,7 @@ def analyze_from_database(id):
             locked INTEGER DEFAULT 0
         )
     """
-    # execute_query(create_artists_table)
+    execute_query(create_artists_table)
     result = execute_read_query(f"SELECT consensus FROM artists WHERE spotify_id='{id}'")
     if(result == None):
         return "UND"
@@ -183,6 +246,17 @@ def execute_read_query(query):
     try:
         cursor.execute(query)
         result = cursor.fetchone()
+        return result
+    except OperationalError as e:
+        print(f"The error '{e}' occurred")
+
+def execute_read_multiple_query(query):
+    global connection
+    cursor = connection.cursor()
+    result = None
+    try:
+        cursor.execute(query)
+        result = cursor.fetchall()
         return result
     except OperationalError as e:
         print(f"The error '{e}' occurred")

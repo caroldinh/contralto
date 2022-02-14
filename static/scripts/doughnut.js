@@ -6,21 +6,62 @@ window.onload = function displayChart(){
         url: "/" + id + "/artists/",
         type: "get",
         success: function(response) {
+            let tracks_male = 0;
+            const maleArtists = document.getElementById("male-artists").getElementsByClassName("artists-list")[0];
+            Object.values(response.male_led).forEach(function(element){
+                let artist = document.createElement("span");
+                artist.className = "male-artist";
+                artist.innerText=element.name;
+                tracks_male += element.occurances;
+                maleArtists.appendChild(artist);
+            });
+
+            let tracks_underrep = 0;
+            const underrepArtists = document.getElementById("underrep-artists").getElementsByClassName("artists-list")[0];
+            Object.values(response.underrepresented).forEach(function(element){
+                let artist = document.createElement("span");
+                artist.className = "underrep-artist";
+                artist.innerText=element.name;
+                tracks_underrep += element.occurances;
+                underrepArtists.appendChild(artist);
+            });
+            
+            let tracks_mixed = 0;
+            const mixedGender = document.getElementById("mixed-gender").getElementsByClassName("artists-list")[0];
+            Object.values(response.mixed_gender).forEach(function(element){
+                let artist = document.createElement("span");
+                artist.className = "mixed-group";
+                artist.innerText=element.name;
+                tracks_mixed += element.occurances;
+                mixedGender.appendChild(artist);
+            });
+
+            let tracks_undetermined = 0;
+            const undeterminedArtists = document.getElementById("undetermined-artists");
+            let count = 0;
+            Object.values(response.undetermined).forEach(function(element){
+                let artist = document.createElement("span");
+                tracks_undetermined += element.occurances;
+                if(count == Object.values(response.undetermined).length - 1){
+                    artist.innerText=element.name;
+                } else {
+                    artist.innerText=element.name + ", ";
+                }
+                undeterminedArtists.appendChild(artist);
+                count++;
+            });
+
             const ctx = $("#artists-chart");
-            let male_led = Object.keys(response.male_led).length;
-            let underrepresented = Object.keys(response.underrepresented).length;
-            let mixed_gender = Object.keys(response.mixed_gender).length;
-            let undetermined = Object.keys(response.undetermined).length;
             const data = {
                 labels: [
-                    'Male artists',
-                    'Female or nonbinary artists',
+                    'Men',
+                    'Women & nonbinary',
                     'Mixed-gender bands',
                     'Undetermined'
                 ],
                 datasets: [{
                     label: 'Artist Data',
-                    data: [male_led, underrepresented, mixed_gender, undetermined],
+                    data: [tracks_male, tracks_underrep, tracks_mixed, tracks_undetermined],
                     backgroundColor: [
                         '#71B2EB',
                         '#E77849',
@@ -51,34 +92,6 @@ window.onload = function displayChart(){
 
             const myChart = new Chart(ctx, config);
 
-            const maleArtists = document.getElementById("male-artists").getElementsByClassName("artists-list")[0];
-            Object.values(response.male_led).forEach(function(element){
-                let artist = document.createElement("span");
-                artist.className = "male-artist";
-                artist.innerText=element;
-                maleArtists.appendChild(artist);
-            });
-
-            const underrepArtists = document.getElementById("underrep-artists").getElementsByClassName("artists-list")[0];
-            Object.values(response.underrepresented).forEach(function(element){
-                let artist = document.createElement("span");
-                artist.className = "underrep-artist";
-                artist.innerText=element;
-                underrepArtists.appendChild(artist);
-            });
-
-            const mixedGenderGroups = document.getElementById("undetermined-artists");
-            let count = 0;
-            Object.values(response.undetermined).forEach(function(element){
-                let artist = document.createElement("span");
-                if(count == Object.values(response.undetermined).length - 1){
-                    artist.innerText=element;
-                } else {
-                    artist.innerText=element + ", ";
-                }
-                mixedGenderGroups.appendChild(artist);
-                count++;
-            });
         },
         error: function(xhr) {
             //Do Something to handle error
