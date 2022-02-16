@@ -110,16 +110,31 @@ class PlaylistAnalyzer(threading.Thread):
                             index -= 1
                         if(self.top_artists[index]['id'] == artist_info['id']):
                             self.top_artists[index]['occurrences'] = occurrences
-                        elif(index < len(self.top_artists) - 1):
-                            self.top_artists.insert(index, artist_info)
-                        if(len(self.top_artists) > 5):
-                            self.top_artists.pop()
+                        else:
+                            self.top_artists.insert(index, {'id':artist_info['id'], 'occurrences':occurrences})
                     print("RESULT: " + artist_result)
                     print()
                 current_track += 1
-                self.progress = current_track / total_tracks
+                self.progress = 0.95 * (current_track / total_tracks)
             
             self.result = str(round((underrepresented / total) * 100, 1))
+
+            for popularity in self.recs:
+                rec = None
+                artist_index = 0 
+                while(rec == None and artist_index < len(self.top_artists)):
+                    rec = generate_rec(self.top_artists[artist_index]['id'], artists_checked.keys(), popularity)
+                    artist_index += 1
+                if(rec == None):
+                    artist_index = 0 
+                    while(rec == None and artist_index < len(self.top_artists)):
+                        rec = generate_rec(self.top_artists[artist_index]['id'], artists_checked.keys())
+                        artist_index += 1
+                    if(rec == None):
+                        rec = ["", "", "", "", 0]
+                self.recs[popularity] = rec
+            
+            self.progress = 1
             # Go back through and update recommendations tables for artists in this playlist
             for category in self.artists:
                 for outer_artist in self.artists[category]:
@@ -128,24 +143,9 @@ class PlaylistAnalyzer(threading.Thread):
                             pass
                         else:
                             update_recs_table(self.artists[category][outer_artist], self.artists['underrepresented'][inner_artist])
-                    print()
 
-            print()
-            rec_artists = []
-            for x in range(3):
-                rec_artist = random.choice(self.top_artists)
-                if(len(self.top_artists) > 3):
-                    self.top_artists.remove(rec_artist)
-            count = 0
-            for popularity in self.recs:
-                if(len(rec_artists) > count):
-                    self.recs[popularity] = generate_rec(rec_artists[count]['id'], popularity)
-                    if(self.recs[popularity] == None):
-                        self.recs[popularity] = generate_rec(rec_artists[count]['id'])
-            
         else:
             self.result = "Playlist not found"
-
 
 app = Flask(__name__)
 app.debug = True
@@ -203,7 +203,8 @@ def display_result(playlist_id):
     if(playlist_id in analyzers):
         result = analyzers[playlist_id].result
         # analyzers[playlist_id] = None
-        return render_template('results.html', id=playlist_id, result=result, playlist=analyzers[playlist_id].playlist)
+        return render_template('results.html', id=playlist_id, result=result, playlist=analyzers[playlist_id].playlist, \
+            recs=analyzers[playlist_id].recs)
     else:
         return redirect(url_for('analyze_playlist', playlist_id=playlist_id))
 

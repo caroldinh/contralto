@@ -67,18 +67,21 @@ def sort_artist(artist):
     else:
         return '0-30'
 
-def generate_rec(id, popularity=None):
+def generate_rec(id, exclude, popularity=None):
     global connection
     connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
     connection.autocommit = True
     recs_table = None
     if(popularity == None):
-        recs_table = execute_read_multiple_query(f"SELECT * FROM recs{id}")
+        recs_table = execute_read_multiple_query(f"SELECT * FROM recs{id} ORDER BY matches DESC")
     else:
-        recs_table = execute_read_multiple_query(f"SELECT * FROM recs{id} WHERE popularity='{popularity}'")
-    if(recs_table == None):
+        recs_table = execute_read_multiple_query(f"SELECT * FROM recs{id} WHERE popularity='{popularity}' ORDER BY matches DESC")
+    if(recs_table == None or len(recs_table) == 0):
         return None
-    return str(random.choice(recs_table))
+    for rec in recs_table:
+        if(not(rec[0] in exclude)):
+            return rec
+    return None
 
 def analyze_via_crawl(id, artist, individual=False):
 

@@ -12,7 +12,7 @@ window.onload = function displayChart(){
                 let artist = document.createElement("span");
                 artist.className = "male-artist";
                 artist.innerText=element.name;
-                tracks_male += element.occurances;
+                tracks_male += element.occurrences;
                 maleArtists.appendChild(artist);
             });
 
@@ -22,7 +22,7 @@ window.onload = function displayChart(){
                 let artist = document.createElement("span");
                 artist.className = "underrep-artist";
                 artist.innerText=element.name;
-                tracks_underrep += element.occurances;
+                tracks_underrep += element.occurrences;
                 underrepArtists.appendChild(artist);
             });
             
@@ -32,7 +32,7 @@ window.onload = function displayChart(){
                 let artist = document.createElement("span");
                 artist.className = "mixed-group";
                 artist.innerText=element.name;
-                tracks_mixed += element.occurances;
+                tracks_mixed += element.occurrences;
                 mixedGender.appendChild(artist);
             });
 
@@ -41,7 +41,7 @@ window.onload = function displayChart(){
             let count = 0;
             Object.values(response.undetermined).forEach(function(element){
                 let artist = document.createElement("span");
-                tracks_undetermined += element.occurances;
+                tracks_undetermined += element.occurrences;
                 if(count == Object.values(response.undetermined).length - 1){
                     artist.innerText=element.name;
                 } else {
