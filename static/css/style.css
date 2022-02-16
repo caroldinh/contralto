@@ -453,6 +453,12 @@ p {
     border-radius: 5vw;
 }
 
+.placeholder-rec{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
 #rec-name{
     font-family: var(--header-font);
     font-size: 2.4vw;

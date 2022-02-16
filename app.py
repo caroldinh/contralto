@@ -5,10 +5,12 @@ import sys
 import threading
 import os
 import logging
-import psycopg2
-from psycopg2 import OperationalError
 import random
 
+'''
+Playlist analyzer class using multithreading to serve
+multiple clients simultaneously.
+'''
 class PlaylistAnalyzer(threading.Thread):
     def __init__(self, id):
         self.progress = 0
@@ -26,6 +28,7 @@ class PlaylistAnalyzer(threading.Thread):
             "30-60":None,
             "0-30":None
         }
+        self.num_recs = 0
         self.top_artists = []
         super().__init__()
     
@@ -72,7 +75,11 @@ class PlaylistAnalyzer(threading.Thread):
                     artist_info = requests.get(artist['href'], headers=headers).json()
                     artist_id = artist_info['id']
                     print(artist_info['name'])
+
+                    # Track how many times the artist appears in this playlist
                     occurrences = 1
+
+                    # If we have already checked this artist, retrieve the result we've stored for them
                     if(artist_id in artists_checked):
                         artist_result = artists_checked[artist_id]
                         if(artist_result == "F" or artist_result == "X"):
@@ -89,6 +96,9 @@ class PlaylistAnalyzer(threading.Thread):
                             occurrences = self.artists['undetermined'][artist_id]['occurrences'] + 1
                             self.artists['undetermined'][artist_id]['occurrences'] = occurrences
                     else:
+
+                        # If not, analyze the artist and store the result in case the artist
+                        # appears later on the same playlist
                         artist_result = analyze(artist_info)
                         artist_info['occurrences'] = 1
                         if(artist_result == "F" or artist_result == "X"):
@@ -101,9 +111,13 @@ class PlaylistAnalyzer(threading.Thread):
                         else:
                             self.artists['undetermined'][artist['id']] = artist_info
                         artists_checked[artist_id] = artist_result
+
+                    # Keep a list of all artists ordered by number of occurances in the playlist
                     if(len(self.top_artists) == 0):
                         self.top_artists.append(artist_info)
                     else:
+
+                        # TODO: This is an insertion sort - inefficient! Change to binary sort
                         index = len(self.top_artists) - 1 
                         while(self.top_artists[index]['id'] != artist_info['id'] and \
                             self.top_artists[index]['occurrences'] < occurrences and index > 0):
@@ -115,26 +129,59 @@ class PlaylistAnalyzer(threading.Thread):
                     print("RESULT: " + artist_result)
                     print()
                 current_track += 1
+
+                # Update the progress of the playlist
                 self.progress = 0.95 * (current_track / total_tracks)
             
             self.result = str(round((underrepresented / total) * 100, 1))
 
+            # Start generating recommendations for the playlist
+            rec_possible = True
+            self.num_recs = 0
+
+            # Get a mainstream artist, an emerging artist, and an obscure artist
             for popularity in self.recs:
                 rec = None
-                artist_index = 0 
-                while(rec == None and artist_index < len(self.top_artists)):
-                    rec = generate_rec(self.top_artists[artist_index]['id'], artists_checked.keys(), popularity)
-                    artist_index += 1
-                if(rec == None):
-                    artist_index = 0 
-                    while(rec == None and artist_index < len(self.top_artists)):
-                        rec = generate_rec(self.top_artists[artist_index]['id'], artists_checked.keys())
-                        artist_index += 1
+                if(rec_possible):
+
+                    # Pick one of the playlist's top three artists
+                    artist_start_index = random.randint(0, 3)
+                    artist_index = artist_start_index
+
+                    # Try to retrieve a recommendation related to that artist with the popularity level we want
+                    # If a recommendation cannot be generated, go to the next artist
+                    # And loop until we've checked all artists in the playlist
+                    while(rec == None and artist_index != (artist_start_index - 1) % len(self.top_artists)):
+                        rec = generate_rec(self.top_artists[artist_index]['id'], artists_checked.keys(), popularity)
+                        artist_index = (artist_index + 1) % len(self.top_artists)
+
+                    # If we couldn't get a recommendation, repeat the same process but disregard the popularity level
                     if(rec == None):
-                        rec = ["", "", "", "", 0]
+                        artist_start_index = random.randint(0, 3)
+                        artist_index = artist_start_index
+                        while(rec == None and artist_index != (artist_start_index - 1) % len(self.top_artists)):
+                            rec = generate_rec(self.top_artists[artist_index]['id'], artists_checked.keys())
+                            artist_index = (artist_index + 1) % len(self.top_artists)
+
+                        # If a recommendation still isn't possible, return an empty list
+                        if(rec == None):
+                            rec = ["", "", "", "", 0]
+
+                            # At this point, note that it isn't possible to generate a recommendation from this playlist
+                            # so don't bother to go through that whole process for the remaining recommendations
+                            rec_possible = False
+
+                        # Track how many recommendations it was possible to generate
+                        else:
+                            self.num_recs += 1
+                    else:
+                        self.num_recs += 1
+                else:
+                    rec = ["", "", "", "", 0]
                 self.recs[popularity] = rec
             
             self.progress = 1
+
             # Go back through and update recommendations tables for artists in this playlist
             for category in self.artists:
                 for outer_artist in self.artists[category]:
@@ -204,7 +251,7 @@ def display_result(playlist_id):
         result = analyzers[playlist_id].result
         # analyzers[playlist_id] = None
         return render_template('results.html', id=playlist_id, result=result, playlist=analyzers[playlist_id].playlist, \
-            recs=analyzers[playlist_id].recs)
+            recs=analyzers[playlist_id].recs, num_recs=analyzers[playlist_id].num_recs)
     else:
         return redirect(url_for('analyze_playlist', playlist_id=playlist_id))
 

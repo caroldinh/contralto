@@ -89,32 +89,25 @@
         <img class="header-image" src="{{ url_for('static', filename='images/Recommendations.svg') }}">
         <div class="spacer"></div>
         <p>These artists may be a good fit for your playlist:</p><br>
+        {% if num_recs < 3 %}
+          <p class="caption">Looking a bit empty? We base our recommendations on playlists we've analyzed; perhaps your playlist features artists no one has ran through us before. Check back later for better recommendations.</p>
+          <div class="spacer"></div>
+        {% endif %}
         <div id="artist-recommendations">
-          <div class="artist-rec">
-            <a href="https://open.spotify.com/artist/{{recs['60-100'][0]}}" target="_blank">
-              <div class="rec-cover">
-                <img class="rec-img" id="rec1-cover" src="{{recs['60-100'][3]}}">
-              </div>
-            </a>
-            <p id="rec-name">{{recs['60-100'][1]}}</p>
-          </div>
-          <div class="artist-rec">
-            <a href="https://open.spotify.com/artist/{{recs['30-60'][0]}}" target="_blank">
-              <div class="rec-cover">
-                <img class="rec-img" id="rec1-cover" src="{{recs['30-60'][3]}}">
-              </div>
-            </a>
-            <p id="rec-name">{{recs['30-60'][1]}}</p>
-          </div>
-          <div class="artist-rec">
-            <a href="https://open.spotify.com/artist/{{recs['0-30'][0]}}" target="_blank">
-              <div class="rec-cover">
-                <img class="rec-img" id="rec1-cover" src="{{recs['0-30'][3]}}">
-              </div>
-            </a>
-            <p id="rec-name">{{recs['0-30'][1]}}</p>
-          </div>
-
+          {% for rec in recs %}
+            <div class="artist-rec">
+              <a href="https://open.spotify.com/artist/{{recs[rec][0]}}" target="_blank">
+                <div class="rec-cover">
+                  {% if recs[rec][3] == "" %}
+                    <img class="placeholder-rec" src="{{ url_for('static', filename='images/headphones.svg') }}">
+                  {% else %}
+                    <img class="rec-img" src="{{recs[rec][3]}}">
+                  {% endif %}
+                </div>
+              </a>
+              <p id="rec-name">{{recs[rec][1]}}</p>
+            </div>
+          {% endfor %}
           </div>
         </div>
         <div class="spacer"></div>
