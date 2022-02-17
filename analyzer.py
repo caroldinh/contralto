@@ -3,8 +3,202 @@ import requests
 import psycopg2
 from psycopg2 import OperationalError
 import os
+import threading
+import random
 
 connection = None
+
+'''
+Playlist analyzer class using multithreading to serve
+multiple clients simultaneously.
+'''
+class PlaylistAnalyzer(threading.Thread):
+    def __init__(self, id):
+        self.progress = 0
+        self.id = id
+        self.result = ""
+        self.playlist = None
+        self.artists = {
+            "male_led":{},
+            "underrepresented":{},
+            "mixed_gender":{},
+            "undetermined":{}
+        }
+        self.recs = {
+            "60-100":None,
+            "30-60":None,
+            "0-30":None
+        }
+        self.num_recs = 0
+        self.top_artists = []
+        super().__init__()
+    
+    def run(self): 
+        CLIENT_ID = os.getenv('CLIENT_ID')
+        CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+        AUTH_URL = 'https://accounts.spotify.com/api/token'
+
+        # POST
+        auth_response = requests.post(AUTH_URL, {
+            'grant_type': 'client_credentials',
+            'client_id': CLIENT_ID,
+            'client_secret': CLIENT_SECRET,
+        })
+
+        # convert the response to JSON
+        auth_response_data = auth_response.json()
+
+        # save the access token
+        access_token = auth_response_data['access_token']
+
+        headers = {
+            'Authorization': 'Bearer {token}'.format(token=access_token)
+        }
+
+        total = 0
+        underrepresented = 0
+        artists_checked = {}
+
+        BASE_URL = 'https://api.spotify.com/v1/playlists/{playlist_id}'
+        self.playlist = requests.get(BASE_URL.format(playlist_id=self.id), headers=headers).json()
+
+        tracks = self.playlist['tracks']
+        if('items' in tracks):
+            total_tracks = len(tracks['items'])
+            current_track = 0
+            artist_result = 'UND'
+
+            # Start looping through all songs
+            for track in tracks['items']:
+                track_artists = track['track']['artists']
+                for artist in track_artists:
+                    total += 1
+                    artist_info = requests.get(artist['href'], headers=headers).json()
+                    artist_id = artist_info['id']
+                    print(artist_info['name'])
+
+                    # Track how many times the artist appears in this playlist
+                    occurrences = 1
+
+                    # If we have already checked this artist, retrieve the result we've stored for them
+                    if(artist_id in artists_checked):
+                        artist_result = artists_checked[artist_id]
+                        if(artist_result == "F" or artist_result == "X"):
+                            underrepresented += 1
+                            occurrences = self.artists['underrepresented'][artist_id]['occurrences'] + 1
+                            self.artists['underrepresented'][artist_id]['occurrences'] = occurrences
+                        elif(artist_result == "M"):
+                            occurrences = self.artists['male_led'][artist_id]['occurrences'] + 1
+                            self.artists['male_led'][artist_id]['occurrences'] = occurrences
+                        elif(artist_result == "MIX"):
+                            occurrences = self.artists['mixed_gender'][artist_id]['occurrences'] + 1
+                            self.artists['mixed_gender'][artist_id]['occurrences'] = occurrences
+                        else:
+                            occurrences = self.artists['undetermined'][artist_id]['occurrences'] + 1
+                            self.artists['undetermined'][artist_id]['occurrences'] = occurrences
+                    else:
+
+                        # If not, analyze the artist and store the result in case the artist
+                        # appears later on the same playlist
+                        artist_result = analyze(artist_info)
+                        artist_info['occurrences'] = 1
+                        if(artist_result == "F" or artist_result == "X"):
+                            underrepresented += 1
+                            self.artists['underrepresented'][artist['id']] = artist_info
+                        elif(artist_result == "M"):
+                            self.artists['male_led'][artist['id']] = artist_info
+                        elif(artist_result == "MIX"):
+                            self.artists['mixed_gender'][artist['id']] = artist_info
+                        else:
+                            self.artists['undetermined'][artist['id']] = artist_info
+                        artists_checked[artist_id] = artist_result
+
+                    # Keep a list of all artists ordered by number of occurances in the playlist
+                    if(len(self.top_artists) == 0):
+                        self.top_artists.append(artist_info)
+                    else:
+
+                        # TODO: This is an insertion sort - inefficient! Change to binary sort
+                        index = len(self.top_artists) - 1 
+                        while(self.top_artists[index]['id'] != artist_info['id'] and \
+                            self.top_artists[index]['occurrences'] < occurrences and index > 0):
+                            index -= 1
+                        if(self.top_artists[index]['id'] == artist_info['id']):
+                            self.top_artists[index]['occurrences'] = occurrences
+                        else:
+                            self.top_artists.insert(index, {'id':artist_info['id'], 'occurrences':occurrences})
+                    print("RESULT: " + artist_result)
+                    print()
+                current_track += 1
+
+                # Update the progress of the playlist
+                self.progress = 0.95 * (current_track / total_tracks)
+            
+            self.result = str(round((underrepresented / total) * 100, 1))
+
+            # Start generating recommendations for the playlist
+            rec_possible = True
+            self.num_recs = 0
+            exclude = list(artists_checked.keys())
+
+            # Get a mainstream artist, an emerging artist, and an obscure artist
+            for popularity in self.recs:
+                rec = None
+                if(rec_possible):
+
+                    # Pick one of the playlist's top three artists
+                    artist_start_index = random.randint(0, 3)
+                    artist_index = artist_start_index
+
+                    # Try to retrieve a recommendation related to that artist with the popularity level we want
+                    # If a recommendation cannot be generated, go to the next artist
+                    # And loop until we've checked all artists in the playlist
+                    while(rec == None and artist_index != (artist_start_index - 1) % len(self.top_artists)):
+                        rec = generate_rec(self.top_artists[artist_index]['id'], exclude, popularity)
+                        artist_index = (artist_index + 1) % len(self.top_artists)
+
+                    # If we couldn't get a recommendation, repeat the same process but disregard the popularity level
+                    if(rec == None):
+                        artist_start_index = random.randint(0, 3)
+                        artist_index = artist_start_index
+                        while(rec == None and artist_index != (artist_start_index - 1) % len(self.top_artists)):
+                            rec = generate_rec(self.top_artists[artist_index]['id'], exclude)
+                            artist_index = (artist_index + 1) % len(self.top_artists)
+
+                        # If a recommendation still isn't possible, return an empty list
+                        if(rec == None):
+                            print("Rec not possible")
+                            rec = ["", "", "", "", 0]
+
+                            # At this point, note that it isn't possible to generate a recommendation from this playlist
+                            # so don't bother to go through that whole process for the remaining recommendations
+                            rec_possible = False
+
+                        # Track how many recommendations it was possible to generate
+                        else:
+                            self.num_recs += 1
+                            exclude.append(rec[0]) # Excludes duplicate recommendations
+                    else:
+                        self.num_recs += 1
+                        exclude.append(rec[0]) # Excludes duplicate recommendations
+                else:
+                    rec = ["", "", "", "", 0]
+                self.recs[popularity] = rec
+            
+            self.progress = 1
+
+            # Go back through and update recommendations tables for artists in this playlist
+            for category in self.artists:
+                for outer_artist in self.artists[category]:
+                    for inner_artist in self.artists['underrepresented']:
+                        if(outer_artist == inner_artist):
+                            pass
+                        else:
+                            update_recs_table(self.artists[category][outer_artist], self.artists['underrepresented'][inner_artist])
+
+        else:
+            self.result = "Playlist not found"
+
 
 # Determine the gender of an artist
 def analyze(artist_json):
@@ -18,19 +212,41 @@ def analyze(artist_json):
     id = artist_json['id']
     artist = artist_json['name']
     result = analyze_from_database(id)
+    artist_image = ""
+    if(len(artist_json['images']) > 0):
+        artist_image = artist_json['images'][0]['url']
+    popularity = sort_artist(artist_json)
+
 
     # If we didn't get a result, determine the artist's gender by analyzing their last.fm bio
     if(result == "UND"):
         result = analyze_via_crawl(id, artist)
 
-    # If that artist wasn't previously in the database, create a table for them
-    # to store associated artists based on other playlists
+        check_if_exists = execute_read_query(f"SELECT * FROM artists WHERE spotify_id='{id}'")
+        query = ""
+
+        # If we hadn't analyzed this artist before, add a new row to store their result
+        if(check_if_exists == None):
+            escaped_name = artist.replace('\0', '\\0').replace('\'', '\'\'').replace('\"', '\"\"').replace('\b', '\\b') \
+            .replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace('\Z', '\\Z').replace('\\', '\\\\') \
+                .replace('%', '\%').replace('_', '\_')
+            query = f"INSERT INTO artists (spotify_id, name, picture, popularity, consensus) VALUES ('{id}', " + \
+                f"'{escaped_name}', '{artist_image}', '{popularity}', '{result}');"
+        
+        # Otherwise, update the existing row
+        else:
+            query = f"UPDATE artists SET consensus='{result}', picture='{artist_image}', popularity='{popularity}' WHERE spotify_id='{id}'"
+        execute_query(query)
+    
+    # If we did get a result, make sure the image and popularity are up-to-date
+    else:
+        query = f"UPDATE artists SET picture='{artist_image}', popularity='{popularity}' WHERE spotify_id='{id}'"
+        execute_query(query)
+
     create_recs_table = f"""
-        CREATE TABLE IF NOT EXISTS recs{id} (
-            spotify_id VARCHAR(128) NOT NULL PRIMARY KEY,
-            name TEXT NOT NULL, 
-            popularity TEXT NOT NULL,
-            picture TEXT,
+        CREATE TABLE IF NOT EXISTS recs (
+            source_id TEXT NOT NULL,
+            rec_id TEXT NOT NULL,
             matches INT NOT NULL
         )
     """
@@ -38,39 +254,27 @@ def analyze(artist_json):
     return result
 
 # Update an artist's table of associated/similar acts to generate recommendations later
-def update_recs_table(table_artist, add_artist):
+def update_recs_table(source_artist, rec_artist):
 
     # Find the table we want to update
-    artist_row = execute_read_query(f"SELECT * from recs{table_artist['id']} WHERE spotify_id='{add_artist['id']}'")
-
-    # Store their picture if we have it
-    artist_image = None
-    if(len(add_artist['images']) > 0):
-        artist_image = add_artist['images'][0]['url']
-
-    # Escape the artist's name to prevent SQL injection
-    escaped_name = add_artist['name'].replace('\0', '\\0').replace('\'', '\'\'').replace('\"', '\"\"') \
-        .replace('\b', '\\b').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t') \
-            .replace('\Z', '\\Z').replace('\\', '\\\\').replace('%', '\%').replace('_', '\_')
-    artist = {
-        "spotify_id":add_artist['id'],
-        "name":escaped_name,
-        "popularity":sort_artist(add_artist),
-        "picture":artist_image,
-        "matches":add_artist['occurrences']
-    }
+    artist_row = execute_read_query(f"SELECT * from recs WHERE source_id='{source_artist['id']}' AND rec_id='{rec_artist['id']}'")
 
     # If the recommendation wasn't there before, add a new row
     if(artist_row == None):
-        query = f"INSERT INTO recs{table_artist['id']} (spotify_id, name, popularity, picture, matches) VALUES " + \
-            f"('{artist['spotify_id']}', '{artist['name']}', '{artist['popularity']}', '{artist['picture']}', {artist['matches']});"
+        row = {
+            "source_id":source_artist['id'],
+            "rec_id":rec_artist['id'],
+            "matches":rec_artist['occurrences']
+        }
+        query = f"INSERT INTO recs (source_id, rec_id, matches) VALUES " + \
+            f"('{row['source_id']}', '{row['rec_id']}', {row['matches']});"
         execute_query(query)
     
     # Otherwise, update the recommendation's existing row
     else:
-        new_matches = add_artist['occurrences'] + artist_row[4]
-        query = f"UPDATE recs{table_artist['id']} SET popularity='{artist['popularity']}', picture='{artist['picture']}', matches={new_matches} " + \
-            f"WHERE spotify_id='{artist['spotify_id']}'"
+        new_matches = rec_artist['occurrences'] + artist_row[2]
+        query = f"UPDATE recs SET matches={new_matches} " + \
+            f"WHERE source_id='{source_artist['id']}' AND rec_id='{rec_artist['id']}'"
         execute_query(query)
 
 # Categorize the artist's level of popularity
@@ -84,25 +288,25 @@ def sort_artist(artist):
 
 # Generate a recommendation based on an artist and a playlist
 def generate_rec(id, exclude, popularity=None):
-    recs_table = None
 
-    # If a popularity level wasn't provided, retrieve any recommendation
-    if(popularity == None):
-        recs_table = execute_read_multiple_query(f"SELECT * FROM recs{id} ORDER BY matches DESC")
+    # Retrieves a list of one-element tuples (ID of recommendation)
+    recs_table = execute_read_multiple_query(f"SELECT rec_id FROM recs WHERE source_id='{id}' ORDER BY matches DESC")
+    # print("RECS TABLE:  " + str(recs_table))
     
-    # Otherwise, filter by popularity
-    else:
-        recs_table = execute_read_multiple_query(f"SELECT * FROM recs{id} WHERE popularity='{popularity}' ORDER BY matches DESC")
-
     if(recs_table == None or len(recs_table) == 0):
         return None
-    
-    # Return the first recommendation that isn't already in the playlist
+
     for rec in recs_table:
-        if(not(rec[0] in exclude)):
-            return rec
+        rec_id = rec[0]
+        if(not(rec_id in exclude)): # If the recommendation is not already in the playlist
+            rec_artist = execute_read_query(f"SELECT spotify_id, name, popularity, picture FROM artists WHERE spotify_id='{rec_id}'")
+            if(popularity != None and rec_artist[2] == popularity):
+                return rec_artist
+            elif(popularity == None):
+                return rec_artist
     return None
 
+    
 # Determine an artist's gender by crawling their last.fm bio
 def analyze_via_crawl(id, artist, individual=False):
 
@@ -226,21 +430,8 @@ def analyze_via_crawl(id, artist, individual=False):
     else:
         result = analyze_based_on_tags(artist)
 
-    if(id != None):
+    # if(id != None):
 
-        # Store the result of our analysis in SQL table
-        check_if_exists = execute_read_query(f"SELECT * FROM artists WHERE spotify_id='{id}'")
-        query = ""
-
-        # If we hadn't analyzed this artist before, add a new row to store their result
-        if(check_if_exists == None):
-            escaped_name = artist.replace('\0', '\\0').replace('\'', '\'\'').replace('\"', '\"\"').replace('\b', '\\b').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace('\Z', '\\Z').replace('\\', '\\\\').replace('%', '\%').replace('_', '\_')
-            query = f"INSERT INTO artists (spotify_id, name, consensus) VALUES ('{id}', '{escaped_name}', '{result}');"
-        
-        # Otherwise, update the existing row
-        else:
-            query = f"UPDATE artists SET consensus='{result}' WHERE spotify_id='{id}'"
-        execute_query(query)
 
     return result
 
@@ -273,6 +464,8 @@ def analyze_from_database(id):
         CREATE TABLE IF NOT EXISTS artists (
             spotify_id VARCHAR(128) NOT NULL PRIMARY KEY,
             name TEXT NOT NULL, 
+            picture TEXT,
+            popularity TEXT,
             votes_m INTEGER,
             votes_f INTEGER,
             votes_x INTEGER,
