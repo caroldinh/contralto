@@ -1,0 +1,60 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Contralto!</title>
+  <meta name="description" content="Whose voices are in your mix?">
+  <meta name="author" content="SitePoint">
+
+  <meta property="og:title" content="Contralto!">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://">
+  <meta property="og:description" content="Whose voices are in your mix?">
+  <meta property="og:image" content="image.png">
+
+  <link rel="icon" href="{{ url_for('static',filename='images/headphones.svg') }}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Signika:wght@300;400&display=swap" rel="stylesheet"> 
+
+  <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}">
+  
+
+</head>
+
+<body>
+  <div class="spacer"></div>
+  <div id="data-container">
+    {% for artist in artists %}
+        <div class="artist-data">
+          <p class="artist-data-name">{{artists[artist]['name']}}</p>
+          <select name="category" id="{{artist}}-select-category" class="category-select" 
+            onchange="changeVal('{{artist}}')">
+            <option value="M" {% if artists[artist]['consensus'] == 'M' %} selected {% endif %}>Male</option>
+            <option value="F" {% if artists[artist]['consensus'] == 'F' %} selected {% endif %}>Female</option>
+            <option value="X" {% if artists[artist]['consensus'] == 'X' %} selected {% endif %}>Nonbinary</option>
+            <option value="MIX" {% if artists[artist]['consensus'] == 'MIX' %} selected {% endif %}>Mixed-gender</option>
+            <option value="UND" {% if artists[artist]['consensus'] == 'UND' %} selected {% endif %}></option>
+          </select>
+          <a onclick="lock('{{artist}}')" id="lock-{{artist}}" class="lock-artist">
+            {% if artists[artist]['locked'] == 0 %}LOCK
+            {% else %}UNLOCK
+            {% endif %}
+          </a>
+        </div>
+    {% endfor %}
+  </div>
+
+  <button id="done" method="POST" onclick="submit()">Done</button>
+
+</body>
+
+<script src="{{ url_for('static', filename='scripts/admin.js') }}" language="javascript"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+</html>

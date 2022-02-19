@@ -8,7 +8,7 @@ window.onload = function displayChart(){
         success: function(response) {
             let tracks_male = 0;
             const maleArtists = document.getElementById("male-artists").getElementsByClassName("artists-list")[0];
-            Object.values(response.male_led).forEach(function(element){
+            Object.values(response.male).forEach(function(element){
                 let artist = document.createElement("span");
                 artist.className = "male-artist";
                 artist.innerText=element.name;
@@ -18,7 +18,14 @@ window.onload = function displayChart(){
 
             let tracks_underrep = 0;
             const underrepArtists = document.getElementById("underrep-artists").getElementsByClassName("artists-list")[0];
-            Object.values(response.underrepresented).forEach(function(element){
+            Object.values(response.female).forEach(function(element){
+                let artist = document.createElement("span");
+                artist.className = "underrep-artist";
+                artist.innerText=element.name;
+                tracks_underrep += element.occurrences;
+                underrepArtists.appendChild(artist);
+            });
+            Object.values(response.nonbinary).forEach(function(element){
                 let artist = document.createElement("span");
                 artist.className = "underrep-artist";
                 artist.innerText=element.name;

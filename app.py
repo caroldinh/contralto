@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template, redirect, url_for
-from analyzer import PlaylistAnalyzer 
+from analyzer import PlaylistAnalyzer, get_all_artists, update_artists
 import sys
 import logging
 
@@ -69,6 +69,14 @@ def get_artists(playlist_id):
     global analyzers
     if(playlist_id in analyzers):
         return analyzers[playlist_id].artists
+    else:
+        return ""
+
+@app.route('/<playlist_id>/data/')
+def check_data(playlist_id):
+    global analyzers
+    if(playlist_id in analyzers):
+        return render_template('check_data.html', artists=analyzers[playlist_id].artists)
     else:
         return ""
 

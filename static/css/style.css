@@ -326,6 +326,7 @@ p {
     background-color: rgba(var(--blue-rgb), 0.4);
     border-radius: 10vh;
     margin-bottom: 2%;
+    text-align: justify;
 }
 
 #underrep-artists{
@@ -335,6 +336,7 @@ p {
     background-color: rgba(var(--orange-rgb), 0.4);
     border-radius: 10vh;
     margin-bottom: 2%;
+    text-align: justify;
 }
 
 #mixed-gender{
@@ -345,6 +347,7 @@ p {
     background-color: rgba(var(--purple-rgb), 0.4);
     border-radius: 10vh;
     margin-bottom: 1%;
+    text-align: justify;
 }
 
 #mixed-gender-header{
@@ -487,4 +490,109 @@ p {
 #try-again:hover{
     filter: brightness(0.7);
     cursor: pointer;
+}
+
+#data-container{
+    width: 80%;
+    margin-left: 10%;
+    margin-right: 10%;
+    text-align: justify;
+}
+
+.artist-data{
+    display: inline-flex;
+    background-color: white;
+    border-radius: 5vh;
+    margin-top: 1vh;
+    margin-bottom: 1vh;
+    margin-left: 1vh;
+    padding-left: 1vh;
+    padding-right: 1vh;
+}
+
+.category-select{
+    background-color: var(--background-color);
+    margin-top: 1vh;
+    margin-bottom: 1vh;
+    border: none;
+    font-family: var(--body-font);
+    font-size: 1em;
+    color: var(--body-text-color);
+    border-radius: 3vh;
+    margin-right: 0.5vw;
+    padding-top: 1vh;
+    padding-bottom: 1vh;
+}
+
+.category-select option{
+    padding-left: 2vw;
+}
+
+.artist-data-name{
+    vertical-align: middle; 
+    font-size: 1.5em;
+    color: var(--text-color-light);
+    margin-left: 2vw;
+    margin-right: 3vw;
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+.artist-dot-male{
+    margin-right: 0.5vw;
+    color: var(--blue);
+    border-radius: 3vh;
+}
+
+.artist-dot-female{
+    margin-right: 0.5vw;
+    color: var(--orange);
+    border-radius: 3vh;
+}
+
+.artist-dot-nonbinary{
+    margin-right: 0.5vw;
+    color: var(--medium-pink);
+    border-radius: 3vh;
+}
+
+.artist-dot-mixed_gender{
+    margin-right: 0.5vw;
+    color: var(--purple);
+    border-radius: 3vh;
+}
+
+#done{
+    position: fixed;
+    right: 5vw;
+    bottom: 5vh;
+    background-color: var(--dark-pink);
+    color: white;
+    font-family: var(--body-font);
+    border: none;
+    border-radius: 3vh;
+    font-size: 2em;
+    padding: 1vh;
+    transition: 0.3s;
+    box-shadow: var(--dark-pink);
+}
+
+#done:hover{
+    cursor: pointer;
+    filter: brightness(0.7);
+}
+
+.lock-artist{
+    vertical-align: middle; 
+    margin-top: auto;
+    margin-bottom: auto;
+    color: var(--dark-pink);
+    font-size: 1em;
+    font-family: var(--body-font);
+    margin-right: 1vw;
+}
+
+.lock-artist:hover{
+    cursor:pointer;
+    filter:brightness(0.7);
 }

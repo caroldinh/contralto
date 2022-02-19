@@ -19,8 +19,9 @@ class PlaylistAnalyzer(threading.Thread):
         self.result = ""
         self.playlist = None
         self.artists = {
-            "male_led":{},
-            "underrepresented":{},
+            "male":{},
+            "female":{},
+            "nonbinary":{},
             "mixed_gender":{},
             "undetermined":{}
         }
@@ -85,11 +86,15 @@ class PlaylistAnalyzer(threading.Thread):
                         artist_result = artists_checked[artist_id]
                         if(artist_result == "F" or artist_result == "X"):
                             underrepresented += 1
-                            occurrences = self.artists['underrepresented'][artist_id]['occurrences'] + 1
-                            self.artists['underrepresented'][artist_id]['occurrences'] = occurrences
+                            occurrences = self.artists['female'][artist_id]['occurrences'] + 1
+                            self.artists['female'][artist_id]['occurrences'] = occurrences
+                        elif(artist_result == "X"):
+                            underrepresented += 1
+                            occurrences = self.artists['nonbinary'][artist_id]['occurrences'] + 1
+                            self.artists['nonbinary'][artist_id]['occurrences'] = occurrences
                         elif(artist_result == "M"):
-                            occurrences = self.artists['male_led'][artist_id]['occurrences'] + 1
-                            self.artists['male_led'][artist_id]['occurrences'] = occurrences
+                            occurrences = self.artists['male'][artist_id]['occurrences'] + 1
+                            self.artists['male'][artist_id]['occurrences'] = occurrences
                         elif(artist_result == "MIX"):
                             occurrences = self.artists['mixed_gender'][artist_id]['occurrences'] + 1
                             self.artists['mixed_gender'][artist_id]['occurrences'] = occurrences
@@ -104,9 +109,12 @@ class PlaylistAnalyzer(threading.Thread):
                         artist_info['occurrences'] = 1
                         if(artist_result == "F" or artist_result == "X"):
                             underrepresented += 1
-                            self.artists['underrepresented'][artist['id']] = artist_info
+                            self.artists['female'][artist['id']] = artist_info
+                        elif(artist_result == "X"):
+                            underrepresented += 1
+                            self.artists['nonbinary'][artist['id']] = artist_info
                         elif(artist_result == "M"):
-                            self.artists['male_led'][artist['id']] = artist_info
+                            self.artists['male'][artist['id']] = artist_info
                         elif(artist_result == "MIX"):
                             self.artists['mixed_gender'][artist['id']] = artist_info
                         else:
@@ -188,13 +196,14 @@ class PlaylistAnalyzer(threading.Thread):
             self.progress = 1
 
             # Go back through and update recommendations tables for artists in this playlist
+            underrepresented_artists = {**self.artists['female'], **self.artists['nonbinary']}
             for category in self.artists:
                 for outer_artist in self.artists[category]:
-                    for inner_artist in self.artists['underrepresented']:
+                    for inner_artist in underrepresented_artists:
                         if(outer_artist == inner_artist):
                             pass
                         else:
-                            update_recs_table(self.artists[category][outer_artist], self.artists['underrepresented'][inner_artist])
+                            update_recs_table(self.artists[category][outer_artist], underrepresented_artists[inner_artist])
 
         else:
             self.result = "Playlist not found"
@@ -484,6 +493,9 @@ def analyze_from_database(id):
 # Execute SQL query
 def execute_query(query):
     global connection
+    if(connection == None):
+        connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
+        connection.autocommit = True
     connection.autocommit = True
     cursor = connection.cursor()
     try:
@@ -494,6 +506,9 @@ def execute_query(query):
 # Read single row from SQL table
 def execute_read_query(query):
     global connection
+    if(connection == None):
+        connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
+        connection.autocommit = True
     cursor = connection.cursor()
     result = None
     try:
@@ -506,6 +521,9 @@ def execute_read_query(query):
 # Read multiple rows from SQL table
 def execute_read_multiple_query(query):
     global connection
+    if(connection == None):
+        connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
+        connection.autocommit = True
     cursor = connection.cursor()
     result = None
     try:
