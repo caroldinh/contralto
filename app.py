@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template, redirect, url_for
-from analyzer import PlaylistAnalyzer, get_all_artists, update_artists
+from analyzer import PlaylistAnalyzer, update_result 
+from admin import update_artists
 import sys
 import logging
 
@@ -29,6 +30,7 @@ def submit_link():
             return redirect(id)
     else:
         return render_template('index.html', error_msg="Your playlist must be a Spotify playlist link.")
+
 
 @app.route('/<playlist_id>')
 def analyze_playlist(playlist_id):
@@ -72,13 +74,24 @@ def get_artists(playlist_id):
     else:
         return ""
 
-@app.route('/<playlist_id>/data/')
+@app.route('/<playlist_id>/check-us/')
 def check_data(playlist_id):
     global analyzers
     if(playlist_id in analyzers):
         return render_template('check_data.html', artists=analyzers[playlist_id].artists)
     else:
-        return ""
+        return redirect(url_for('analyze_playlist', playlist_id=playlist_id))
+
+@app.route('/<playlist_id>/check-us/', methods=['POST'])
+def change_artists(playlist_id):
+    if(playlist_id in analyzers):
+        print(request.json)
+        update_artists(request.json)
+        analyzers[playlist_id].artists = update_result(analyzers[playlist_id].artists, request.json)
+        return redirect(url_for('display_result', playlist_id=playlist_id))
+    else:
+        return redirect(url_for('analyze_playlist', playlist_id=playlist_id))
+    # return redirect('/' + playlist_id)
 
 if __name__ == '__main__':
     app.run(threaded=True)

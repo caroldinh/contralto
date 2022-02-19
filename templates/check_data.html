@@ -33,13 +33,24 @@
   <img class="header-image" src="{{ url_for('static',filename='images/FactCheckOurData.svg') }}" alt="Fact-check our data">
   <br>
   <p>Thank you for helping us keep our analyzer accurate!</p>
+  <p class="caption">
+    This feature works like a "voting" system: your input will be added to a total tally and the overall result will be the majority vote.
+    Note that you can only cast one "vote" per day per artist to avoid spam. After you click "DONE", you will not be able to provide input 
+    on that artist again until the next day.
+  </p><br>
+  <p class="caption">
+    If you have an immediate concern over one of our listings, please fill out <a href=
+    'https://docs.google.com/forms/d/e/1FAIpQLScEvshN_EOWUXPZccR2kVrRhKx6Iz9TAlWZJKXR9Z0GQxT3wQ/viewform?usp=sf_link' target='_blank'>
+    this form.</a>
+  </p>
   <div class="spacer"></div>
   <div id="data-container">
     {% for category in artists %}
       {% for artist in artists[category] %}
-          <div class="artist-data">
+          <div class="artist-data" id="{{artist}}-div">
             <p class="artist-data-name">{{artists[category][artist]['name']}}</p>
-            <select name="category" id="{{artists[category][artist]['name']}}-select-category" class="category-select">
+            <select name="category" id="{{artist}}-select-category" class="category-select"
+              onchange="changeVal('{{artist}}')">
               <option value="M" {% if category == 'male' %} selected {% endif %}>Male</option>
               <option value="F" {% if category == 'female' %} selected {% endif %}>Female</option>
               <option value="X" {% if category == 'nonbinary' %} selected {% endif %}>Nonbinary</option>
@@ -50,5 +61,8 @@
       {% endfor %}
     {% endfor %}
   </div>
+  <button id="done" method="POST" onclick="submit()">Done</button>
+  <script src="{{ url_for('static', filename='scripts/check_data.js') }}" language="javascript"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 </body>
 </html>

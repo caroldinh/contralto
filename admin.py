@@ -76,21 +76,21 @@ def update_artists(updates_json, admin=False):
         if(not(admin)):
             if(artist_dict['locked'] == 0):
                 vote_category = ""
-                if(updates_json['category'] == 'M'):
+                if(updates_json[id]['category'] == 'M'):
                     artist_dict['votes_m'] += 1
                     vote_category = 'votes_m'
-                elif(updates_json['category'] == 'F'):
+                elif(updates_json[id]['category'] == 'F'):
                     artist_dict['votes_f'] += 1
                     vote_category = 'votes_f'
-                elif(updates_json['category'] == 'X'):
+                elif(updates_json[id]['category'] == 'X'):
                     artist_dict['votes_x'] += 1
                     vote_category = 'votes_x'
-                elif(updates_json['category'] == 'MIX'):
+                elif(updates_json[id]['category'] == 'MIX'):
                     artist_dict['votes_mix'] += 1
                     vote_category = 'votes_mix'
                 if(artist_dict[vote_category] == max(artist_dict['votes_m'], artist_dict['votes_f'], \
                     artist_dict['votes_x'], artist_dict['votes_mix'])):
-                    artist_dict['consensus'] = updates_json['category']
+                    artist_dict['consensus'] = updates_json[id]['category']
                 execute_query(f"UPDATE artists SET {vote_category}={artist_dict[vote_category]}, consensus=" + \
                     f"'{artist_dict['consensus']}' WHERE spotify_id='{id}'")
         else:

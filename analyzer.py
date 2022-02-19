@@ -1,3 +1,4 @@
+from tkinter import W
 from bs4 import BeautifulSoup
 import requests
 import psycopg2
@@ -216,7 +217,7 @@ def analyze(artist_json):
     global connection
     connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
     connection.autocommit = True
-
+    
     # Query that database to check the gender of the artist
     id = artist_json['id']
     artist = artist_json['name']
@@ -225,7 +226,6 @@ def analyze(artist_json):
     if(len(artist_json['images']) > 0):
         artist_image = artist_json['images'][0]['url']
     popularity = sort_artist(artist_json)
-
 
     # If we didn't get a result, determine the artist's gender by analyzing their last.fm bio
     if(result == "UND"):
@@ -473,12 +473,12 @@ def analyze_from_database(id):
         CREATE TABLE IF NOT EXISTS artists (
             spotify_id VARCHAR(128) NOT NULL PRIMARY KEY,
             name TEXT NOT NULL, 
-            picture TEXT,
+            picture TEXT DEFAULT '',
             popularity TEXT,
-            votes_m INTEGER,
-            votes_f INTEGER,
-            votes_x INTEGER,
-            votes_mix INTEGER,
+            votes_m INTEGER DEFAULT 0,
+            votes_f INTEGER DEFAULT 0,
+            votes_x INTEGER DEFAULT 0,
+            votes_mix INTEGER DEFAULT 0,
             consensus TEXT DEFAULT 'UND',
             locked INTEGER DEFAULT 0
         )
@@ -489,6 +489,28 @@ def analyze_from_database(id):
         return "UND"
     else:
         return result[0]
+
+def update_result(artists_list, updates_json):
+    for category in artists_list:
+        artists_popped = []
+        for id in artists_list[category]:
+            if id in updates_json:
+                if 'category' in updates_json[id]:
+                    if(updates_json[id]['category'] == 'M'):
+                        artists_list['male'][id] = artists_list[category][id]   
+                        artists_popped.append(id)
+                    elif(updates_json[id]['category'] == 'F'):
+                        artists_list['female'][id] = artists_list[category][id]   
+                        artists_popped.append(id)
+                    elif(updates_json[id]['category'] == 'X'):
+                        artists_list['nonbinary'][id] = artists_list[category][id]   
+                        artists_popped.append(id)
+                    elif(updates_json[id]['category'] == 'MIX'):
+                        artists_list['mixed_gender'][id] = artists_list[category][id]   
+                        artists_popped.append(id)
+        for id in artists_popped:
+            artists_list[category].pop(id)
+    return artists_list
 
 # Execute SQL query
 def execute_query(query):

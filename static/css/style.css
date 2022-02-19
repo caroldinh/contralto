@@ -415,7 +415,26 @@ p {
 }
 
 #undetermined{
-    margin-bottom: 10vh;
+    margin-bottom: 5vh;
+}
+
+#link-to-data{
+    display: block;
+    text-decoration: none;
+    font-family: var(--header-font);
+    color: var(--dark-pink);
+    font-size: 2em;
+    text-align: center;
+    width: 80vw;
+    margin-right: 10vw;
+    margin-left: 10vw;
+    margin-bottom: 15vh;
+    transition: 0.3s;
+}
+
+#link-to-data:hover{
+    cursor: pointer;
+    filter: brightness(0.7);
 }
 
 .spacer{
@@ -595,4 +614,14 @@ p {
 .lock-artist:hover{
     cursor:pointer;
     filter:brightness(0.7);
+}
+
+#data-container{
+    margin-bottom: 15vh;
+}
+
+a{
+    text-decoration: none;
+    color: var(--dark-pink);
+    font-weight: bolder;
 }
