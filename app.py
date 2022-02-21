@@ -54,6 +54,8 @@ def get_playlist_info(playlist_id):
     global analyzers
     if(playlist_id in analyzers):
         return analyzers[playlist_id].playlist
+    else:
+        return ""
 
 @app.route('/<playlist_id>/result/')
 def display_result(playlist_id):

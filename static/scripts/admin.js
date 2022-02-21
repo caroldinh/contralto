@@ -15,9 +15,11 @@ function lock(id){
     if(document.getElementById("lock-" + id).innerText == "LOCK"){
         artists_changed[id]['locked'] = 1;
         document.getElementById("lock-" + id).innerText = "UNLOCK";
+        document.getElementById("data-" + id).className = "artist-data data-locked";
     } else {
         artists_changed[id]['locked'] = 0;
         document.getElementById("lock-" + id).innerText = "LOCK";
+        document.getElementById("data-" + id).className = "artist-data";
     }
     console.log(artists_changed);
 }
@@ -28,9 +30,10 @@ function submit(){
     contentType: "application/json; charset=utf-8",
     url: "/",
     data: JSON.stringify(artists_changed),
-    success: function (data) {
-        console.log(data.length);
+    complete: function() {
         alert("Update successful");
+        artists_changed = {};
+        window.location.reload(true);
     },
     dataType: "json"
     });

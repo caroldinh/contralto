@@ -32,7 +32,7 @@
   <div class="spacer"></div>
   <div id="data-container">
     {% for artist in artists %}
-        <div class="artist-data">
+        <div id="data-{{artist}}" class="artist-data {% if artists[artist]['locked'] == 1 %} data-locked {% endif %}">
           <p class="artist-data-name">{{artists[artist]['name']}}</p>
           <select name="category" id="{{artist}}-select-category" class="category-select" 
             onchange="changeVal('{{artist}}')">

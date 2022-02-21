@@ -625,3 +625,7 @@ a{
     color: var(--dark-pink);
     font-weight: bolder;
 }
+
+.data-locked {
+    background-color: rgba(255, 255, 255, 0.3);
+}

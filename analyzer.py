@@ -97,6 +97,7 @@ class PlaylistAnalyzer(threading.Thread):
                             occurrences = self.artists['male'][artist_id]['occurrences'] + 1
                             self.artists['male'][artist_id]['occurrences'] = occurrences
                         elif(artist_result == "MIX"):
+                            underrepresented += 1
                             occurrences = self.artists['mixed_gender'][artist_id]['occurrences'] + 1
                             self.artists['mixed_gender'][artist_id]['occurrences'] = occurrences
                         else:
