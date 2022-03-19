@@ -53,7 +53,10 @@ def get_analyzer_result(playlist_id):
 def get_playlist_info(playlist_id):
     global analyzers
     if(playlist_id in analyzers):
-        return analyzers[playlist_id].playlist
+        if analyzers[playlist_id].playlist != None:
+            return analyzers[playlist_id].playlist
+        else:
+            return ""
     else:
         return ""
 

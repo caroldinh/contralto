@@ -1,3 +1,4 @@
+from glob import escape
 from tkinter import W
 from bs4 import BeautifulSoup
 import requests
@@ -6,8 +7,10 @@ from psycopg2 import OperationalError
 import os
 import threading
 import random
+import re
 
 connection = None
+FUNDAMENTAL_GENRES = ['classical', 'country', 'edm', 'folk', 'hiphop', 'jazz', 'latin', 'rap', 'rock']
 
 '''
 Playlist analyzer class using multithreading to serve
@@ -32,7 +35,7 @@ class PlaylistAnalyzer(threading.Thread):
             "0-30":None
         }
         self.num_recs = 0
-        self.top_artists = []
+        self.genres = {}
         super().__init__()
     
     def run(self): 
@@ -77,6 +80,15 @@ class PlaylistAnalyzer(threading.Thread):
                     total += 1
                     artist_info = requests.get(artist['href'], headers=headers).json()
                     artist_id = artist_info['id']
+                    genres = artist_info['genres']
+
+                    # Keep a list of the top genres in the playlist
+                    for genre in genres:
+                        if(genre in self.genres):
+                            self.genres[genre] += 1
+                        elif(not genre in FUNDAMENTAL_GENRES):
+                            self.genres[genre] = 1
+
                     print(artist_info['name'])
 
                     # Track how many times the artist appears in this playlist
@@ -123,20 +135,6 @@ class PlaylistAnalyzer(threading.Thread):
                             self.artists['undetermined'][artist['id']] = artist_info
                         artists_checked[artist_id] = artist_result
 
-                    # Keep a list of all artists ordered by number of occurances in the playlist
-                    if(len(self.top_artists) == 0):
-                        self.top_artists.append(artist_info)
-                    else:
-
-                        # TODO: This is an insertion sort - inefficient! Change to binary sort
-                        index = len(self.top_artists) - 1 
-                        while(self.top_artists[index]['id'] != artist_info['id'] and \
-                            self.top_artists[index]['occurrences'] < occurrences and index > 0):
-                            index -= 1
-                        if(self.top_artists[index]['id'] == artist_info['id']):
-                            self.top_artists[index]['occurrences'] = occurrences
-                        else:
-                            self.top_artists.insert(index, {'id':artist_info['id'], 'occurrences':occurrences})
                     print("RESULT: " + artist_result)
                     print()
                 current_track += 1
@@ -151,29 +149,34 @@ class PlaylistAnalyzer(threading.Thread):
             self.num_recs = 0
             exclude = list(artists_checked.keys())
 
+            # Create a sorted list of the top genres
+            genres_ordered = dict(sorted(self.genres.items(), key=lambda item: item[1]))
+            print(genres_ordered)
+            top_genres = list(genres_ordered.keys())[-3:]
+            print(top_genres)
+
             # Get a mainstream artist, an emerging artist, and an obscure artist
             for popularity in self.recs:
                 rec = None
                 if(rec_possible):
 
-                    # Pick one of the playlist's top three artists
-                    artist_start_index = random.randint(0, 3)
-                    artist_index = artist_start_index
+                    # Pick one of the playlist's top three genres
+                    genre_start_index = random.randint(0, 2)
+                    genre_index = genre_start_index
 
                     # Try to retrieve a recommendation related to that artist with the popularity level we want
                     # If a recommendation cannot be generated, go to the next artist
                     # And loop until we've checked all artists in the playlist
-                    while(rec == None and artist_index != (artist_start_index - 1) % len(self.top_artists)):
-                        rec = generate_rec(self.top_artists[artist_index]['id'], exclude, popularity)
-                        artist_index = (artist_index + 1) % len(self.top_artists)
+                    while(rec == None and genre_index != (genre_start_index - 1) % len(top_genres)):
+                        rec = generate_rec(top_genres[genre_index], exclude, popularity)
+                        genre_index = (genre_index + 1) % len(top_genres)
 
                     # If we couldn't get a recommendation, repeat the same process but disregard the popularity level
                     if(rec == None):
-                        artist_start_index = random.randint(0, 3)
-                        artist_index = artist_start_index
-                        while(rec == None and artist_index != (artist_start_index - 1) % len(self.top_artists)):
-                            rec = generate_rec(self.top_artists[artist_index]['id'], exclude)
-                            artist_index = (artist_index + 1) % len(self.top_artists)
+                        genre_index = genre_start_index
+                        while(rec == None and genre_index != (genre_start_index - 1) % len(top_genres)):
+                            rec = generate_rec(top_genres[genre_index], exclude)
+                            genre_index = (genre_index + 1) % len(top_genres)
 
                         # If a recommendation still isn't possible, return an empty list
                         if(rec == None):
@@ -196,16 +199,11 @@ class PlaylistAnalyzer(threading.Thread):
                 self.recs[popularity] = rec
             
             self.progress = 1
-
-            # Go back through and update recommendations tables for artists in this playlist
+            
+            # Go back through and update recommendations tables for underrepresented artists in this playlist
             underrepresented_artists = {**self.artists['female'], **self.artists['nonbinary']}
-            for category in self.artists:
-                for outer_artist in self.artists[category]:
-                    for inner_artist in underrepresented_artists:
-                        if(outer_artist == inner_artist):
-                            pass
-                        else:
-                            update_recs_table(self.artists[category][outer_artist], underrepresented_artists[inner_artist])
+            for artist in underrepresented_artists:
+                    update_recs_table(underrepresented_artists[artist])
 
         else:
             self.result = "Playlist not found"
@@ -237,9 +235,7 @@ def analyze(artist_json):
 
         # If we hadn't analyzed this artist before, add a new row to store their result
         if(check_if_exists == None):
-            escaped_name = artist.replace('\0', '\\0').replace('\'', '\'\'').replace('\"', '\"\"').replace('\b', '\\b') \
-            .replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace('\Z', '\\Z').replace('\\', '\\\\') \
-                .replace('%', '\%').replace('_', '\_')
+            escaped_name = escape_sql_string(artist) 
             query = f"INSERT INTO artists (spotify_id, name, picture, popularity, consensus) VALUES ('{id}', " + \
                 f"'{escaped_name}', '{artist_image}', '{popularity}', '{result}');"
         
@@ -258,34 +254,47 @@ def analyze(artist_json):
             source_id TEXT NOT NULL,
             rec_id TEXT NOT NULL,
             matches INT NOT NULL
-        )
+        );
     """
     execute_query(create_recs_table)
     return result
 
 # Update an artist's table of associated/similar acts to generate recommendations later
-def update_recs_table(source_artist, rec_artist):
+def update_recs_table(rec_artist):
 
-    # Find the table we want to update
-    artist_row = execute_read_query(f"SELECT * from recs WHERE source_id='{source_artist['id']}' AND rec_id='{rec_artist['id']}'")
+    for genre in rec_artist['genres']:
 
-    # If the recommendation wasn't there before, add a new row
-    if(artist_row == None):
-        row = {
-            "source_id":source_artist['id'],
-            "rec_id":rec_artist['id'],
-            "matches":rec_artist['occurrences']
-        }
-        query = f"INSERT INTO recs (source_id, rec_id, matches) VALUES " + \
-            f"('{row['source_id']}', '{row['rec_id']}', {row['matches']});"
-        execute_query(query)
-    
-    # Otherwise, update the recommendation's existing row
-    else:
-        new_matches = rec_artist['occurrences'] + artist_row[2]
-        query = f"UPDATE recs SET matches={new_matches} " + \
-            f"WHERE source_id='{source_artist['id']}' AND rec_id='{rec_artist['id']}'"
-        execute_query(query)
+        if(not genre in FUNDAMENTAL_GENRES):
+
+            genre = parse_genre(genre)
+
+            create_genre_table = f"""
+                CREATE TABLE IF NOT EXISTS genre_{genre} (
+                    artist_id TEXT NOT NULL,
+                    popularity TEXT NOT NULL
+                );
+            """
+            execute_query(create_genre_table)
+
+            # Find the table we want to update
+            artist_row = execute_read_query(f"SELECT * from genre_{genre} WHERE artist_id='{rec_artist['id']}'")
+
+            # If the recommendation wasn't there before, add a new row
+            if(artist_row == None):
+                row = {
+                    "artist_id":rec_artist['id'],
+                    "popularity":sort_artist(rec_artist)
+                }
+                query = f"INSERT INTO genre_{genre} (artist_id, popularity) VALUES " + \
+                    f"('{row['artist_id']}', '{row['popularity']}');"
+                execute_query(query)
+            
+            # Otherwise, update the recommendation's existing row
+            else:
+                new_pop = sort_artist(rec_artist)
+                query = f"UPDATE genre_{genre} SET popularity={new_pop} " + \
+                    f"WHERE artist_id='{rec_artist['id']}'"
+                execute_query(query)
 
 # Categorize the artist's level of popularity
 def sort_artist(artist):
@@ -297,25 +306,38 @@ def sort_artist(artist):
         return '0-30'
 
 # Generate a recommendation based on an artist and a playlist
-def generate_rec(id, exclude, popularity=None):
+def generate_rec(genre, exclude, popularity=None):
 
-    # Retrieves a list of one-element tuples (ID of recommendation)
-    recs_table = execute_read_multiple_query(f"SELECT rec_id FROM recs WHERE source_id='{id}' ORDER BY matches DESC")
-    # print("RECS TABLE:  " + str(recs_table))
+    genre = parse_genre(genre)
+
+    create_genre_table = f"""
+        CREATE TABLE IF NOT EXISTS genre_{genre} (
+            artist_id TEXT NOT NULL,
+            popularity TEXT NOT NULL
+        );
+    """
+    execute_query(create_genre_table)
+
+    recs_table = None
+    if(popularity == None):
+        # Retrieves a list of one-element tuples (ID of recommendation)
+        recs_table = execute_read_multiple_query(f"SELECT artist_id FROM genre_{genre}")
+    else:
+        recs_table = execute_read_multiple_query(f"SELECT artist_id FROM genre_{genre} WHERE popularity='{popularity}'")
     
     if(recs_table == None or len(recs_table) == 0):
         return None
 
-    for rec in recs_table:
-        rec_id = rec[0]
-        if(not(rec_id in exclude)): # If the recommendation is not already in the playlist
-            rec_artist = execute_read_query(f"SELECT spotify_id, name, popularity, picture FROM artists WHERE spotify_id='{rec_id}'")
-            if(popularity != None and rec_artist[2] == popularity):
-                return rec_artist
-            elif(popularity == None):
-                return rec_artist
-    return None
-
+    rec_id = random.choice(recs_table)
+    while(len(recs_table) > 0 and rec_id[0] in exclude):
+        recs_table.remove(rec_id)
+        if(len(recs_table) > 0):
+            rec_id = random.choice(recs_table)
+    if(len(recs_table) == 0):
+        return None
+    print(rec_id)
+    rec_artist = execute_read_query(f"SELECT spotify_id, name, popularity, picture FROM artists WHERE spotify_id='{rec_id[0]}'")
+    return rec_artist
     
 # Determine an artist's gender by crawling their last.fm bio
 def analyze_via_crawl(id, artist, individual=False):
@@ -513,13 +535,20 @@ def update_result(artists_list, updates_json):
             artists_list[category].pop(id)
     return artists_list
 
+def parse_genre(genre):
+    return re.sub(r'\W+', '_', genre)
+
+def escape_sql_string(string):
+    return string.replace('\0', '\\0').replace('\'', '\'\'').replace('\"', '\"\"').replace('\b', '\\b') \
+        .replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace('\Z', '\\Z').replace('\\', '\\\\') \
+        .replace('%', '\%').replace('_', '\_')
+
 # Execute SQL query
 def execute_query(query):
     global connection
     if(connection == None):
         connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
         connection.autocommit = True
-    connection.autocommit = True
     cursor = connection.cursor()
     try:
         cursor.execute(query)
