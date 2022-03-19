@@ -1,5 +1,3 @@
-from glob import escape
-from tkinter import W
 from bs4 import BeautifulSoup
 import requests
 import psycopg2
@@ -212,10 +210,12 @@ class PlaylistAnalyzer(threading.Thread):
 # Determine the gender of an artist
 def analyze(artist_json):
 
+    """
     # Connect to the SQL database
     global connection
     connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
     connection.autocommit = True
+    """
     
     # Query that database to check the gender of the artist
     id = artist_json['id']
@@ -249,52 +249,58 @@ def analyze(artist_json):
         query = f"UPDATE artists SET picture='{artist_image}', popularity='{popularity}' WHERE spotify_id='{id}'"
         execute_query(query)
 
-    create_recs_table = f"""
-        CREATE TABLE IF NOT EXISTS recs (
-            source_id TEXT NOT NULL,
-            rec_id TEXT NOT NULL,
-            matches INT NOT NULL
-        );
-    """
-    execute_query(create_recs_table)
     return result
 
-# Update an artist's table of associated/similar acts to generate recommendations later
+# Update the table of recommendations by genre
 def update_recs_table(rec_artist):
 
-    for genre in rec_artist['genres']:
+        create_recs_table = f"""
+            CREATE TABLE IF NOT EXISTS recs (
+                artist_id TEXT NOT NULL,
+                popularity TEXT NOT NULL,
+                genre1 TEXT NOT NULL,
+                genre2 TEXT NOT NULL,
+                genre3 TEXT NOT NULL,
+                genre4 TEXT NOT NULL,
+                genre5 TEXT NOT NULL
+            );
+        """
+        execute_query(create_recs_table)
 
-        if(not genre in FUNDAMENTAL_GENRES):
+        # Find the table we want to update
+        artist_row = execute_read_query(f"SELECT * from recs WHERE artist_id='{rec_artist['id']}'")
 
-            genre = parse_genre(genre)
+        # Get a list of the artist's genres outside of the fundamental genres
+        genres_list = rec_artist['genres']
+        for genre in genres_list:
+            genre = escape_sql_string(genre)
+            if genre in FUNDAMENTAL_GENRES:
+                genres_list.remove(genre)
+        while(len(genres_list) < 5):
+            genres_list.append('')
 
-            create_genre_table = f"""
-                CREATE TABLE IF NOT EXISTS genre_{genre} (
-                    artist_id TEXT NOT NULL,
-                    popularity TEXT NOT NULL
-                );
-            """
-            execute_query(create_genre_table)
-
-            # Find the table we want to update
-            artist_row = execute_read_query(f"SELECT * from genre_{genre} WHERE artist_id='{rec_artist['id']}'")
-
-            # If the recommendation wasn't there before, add a new row
-            if(artist_row == None):
-                row = {
-                    "artist_id":rec_artist['id'],
-                    "popularity":sort_artist(rec_artist)
-                }
-                query = f"INSERT INTO genre_{genre} (artist_id, popularity) VALUES " + \
-                    f"('{row['artist_id']}', '{row['popularity']}');"
-                execute_query(query)
-            
-            # Otherwise, update the recommendation's existing row
-            else:
-                new_pop = sort_artist(rec_artist)
-                query = f"UPDATE genre_{genre} SET popularity={new_pop} " + \
-                    f"WHERE artist_id='{rec_artist['id']}'"
-                execute_query(query)
+        # If the recommendation wasn't there before, add a new row
+        if(artist_row == None):
+            row = {
+                "artist_id":rec_artist['id'],
+                "popularity":sort_artist(rec_artist),
+                "genre1": genres_list[0],
+                "genre2": genres_list[1],
+                "genre3": genres_list[2],
+                "genre4": genres_list[3],
+                "genre5": genres_list[4]
+            }
+            query = f"INSERT INTO recs (artist_id, popularity, genre1, genre2, genre3, genre4, genre5) VALUES " + \
+                f"('{row['artist_id']}', '{row['popularity']}', '{row['genre1']}', '{row['genre2']}', '{row['genre3']}', " + \
+                    f"'{row['genre4']}', '{row['genre5']}');"
+            execute_query(query)
+        
+        # Otherwise, update the recommendation's existing row
+        else:
+            new_pop = sort_artist(rec_artist)
+            query = f"UPDATE recs SET popularity={new_pop} " + \
+                f"WHERE artist_id='{rec_artist['id']}'"
+            execute_query(query)
 
 # Categorize the artist's level of popularity
 def sort_artist(artist):
@@ -308,22 +314,29 @@ def sort_artist(artist):
 # Generate a recommendation based on an artist and a playlist
 def generate_rec(genre, exclude, popularity=None):
 
-    genre = parse_genre(genre)
-
-    create_genre_table = f"""
-        CREATE TABLE IF NOT EXISTS genre_{genre} (
+    create_recs_table = f"""
+        CREATE TABLE IF NOT EXISTS recs (
             artist_id TEXT NOT NULL,
-            popularity TEXT NOT NULL
+            popularity TEXT NOT NULL,
+            genre1 TEXT NOT NULL,
+            genre2 TEXT NOT NULL,
+            genre3 TEXT NOT NULL,
+            genre4 TEXT NOT NULL,
+            genre5 TEXT NOT NULL
         );
     """
-    execute_query(create_genre_table)
+    execute_query(create_recs_table)
+
+    genre = escape_sql_string(genre)
 
     recs_table = None
     if(popularity == None):
         # Retrieves a list of one-element tuples (ID of recommendation)
-        recs_table = execute_read_multiple_query(f"SELECT artist_id FROM genre_{genre}")
+        recs_table = execute_read_multiple_query(f"SELECT artist_id FROM recs WHERE genre1='{genre}' OR genre2='{genre}' " + \
+            f" OR genre3='{genre}' OR genre4='{genre}' OR genre5='{genre}'")
     else:
-        recs_table = execute_read_multiple_query(f"SELECT artist_id FROM genre_{genre} WHERE popularity='{popularity}'")
+        recs_table = execute_read_multiple_query(f"SELECT artist_id FROM recs WHERE genre1='{genre}' OR genre2='{genre}' " + \
+            f" OR genre3='{genre}' OR genre4='{genre}' OR genre5='{genre}' AND popularity='{popularity}'")
     
     if(recs_table == None or len(recs_table) == 0):
         return None
@@ -534,9 +547,6 @@ def update_result(artists_list, updates_json):
         for id in artists_popped:
             artists_list[category].pop(id)
     return artists_list
-
-def parse_genre(genre):
-    return re.sub(r'\W+', '_', genre)
 
 def escape_sql_string(string):
     return string.replace('\0', '\\0').replace('\'', '\'\'').replace('\"', '\"\"').replace('\b', '\\b') \

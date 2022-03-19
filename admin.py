@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template
 import logging
-from analyzer import execute_query, execute_read_multiple_query, execute_read_query
+from analyzer import execute_query, execute_read_multiple_query, execute_read_query, escape_sql_string
 
 app = Flask(__name__)
 app.debug = True
@@ -12,14 +12,20 @@ def admin_all_artists():
     all_artists = get_all_artists()
     return render_template('admin.html', artists=all_artists)
 
+@app.route('/clean/')
+def admin_clean_all_artists():
+    all_artists = get_all_artists(clean=True)
+    return render_template('admin.html', artists=all_artists)
+
 @app.route('/', methods=['POST'])
 def admin_change_artists():
     update_artists(request.json, admin=True)
     return request.json
 
-def get_all_artists(playlist=None):
+def get_all_artists(playlist=None, clean=False):
     all_artists_dict = {}
     if(playlist == None):
+
         all_artists = execute_read_multiple_query("SELECT * from artists")
         for artist in all_artists:
             artist_dict = {
@@ -35,23 +41,11 @@ def get_all_artists(playlist=None):
                 "locked": artist[9],
             }
             all_artists_dict[artist[0]] = artist_dict
-    else:
-        for id in playlist:
-            artist = execute_read_query(f"SELECT * from artists WHERE id={id}")
-            artist_dict = {
-                "id": artist[0],
-                "name": artist[1],
-                "picture": artist[2],
-                "popularity": artist[3],
-                "votes_m": artist[4],
-                "votes_f": artist[5],
-                "votes_x": artist[6],
-                "votes_mix": artist[7],
-                "consensus": artist[8],
-                "locked": artist[9],
-            }
-            if(artist[9] == 0):
-                all_artists_dict[artist[0]] = artist_dict
+
+            if(clean):
+                if(artist_dict['consensus'] == 'M' or artist_dict['consensus'] == 'MIX'):
+                    execute_query(f"DELETE from recs WHERE artist_id='{artist_dict['id']}'")
+
     return all_artists_dict
 
 def update_artists(updates_json, admin=False):
@@ -97,7 +91,7 @@ def update_artists(updates_json, admin=False):
             execute_query(f"UPDATE artists SET consensus='{updates_json[id]['category']}', locked={updates_json[id]['locked']} " + \
                 f"WHERE spotify_id='{id}'")
             if(updates_json[id]['category'] == 'M' or updates_json[id]['category'] == 'MIX'):
-                execute_query(f"DELETE from recs WHERE rec_id='{id}'")
+                execute_query(f"DELETE from recs WHERE artist_id='{artist_dict['id']}'")
 
 if __name__ == '__main__':
     app.run(threaded=True)
