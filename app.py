@@ -5,9 +5,9 @@ import sys
 import logging
 
 app = Flask(__name__)
-app.debug = True
+app.debug = False
 log = logging.getLogger('werkzeug')
-log.disabled = False
+log.disabled = True
 
 analyzers = {}
 

@@ -4,7 +4,7 @@ window.onload = function checkProgress(){
     pageUrl = pageUrl.split('/');
     let id = pageUrl[pageUrl.length - 1];
 
-    console.log(id);
+    //console.log(id);
 
     if($("#playist-name").text() == ""){
         $.ajax({
@@ -26,7 +26,7 @@ window.onload = function checkProgress(){
         url: "/analyzer-progress/" + id,
         type: "get",
         success: function(response) {
-            if(response != undefined){
+            if(response != undefined && response != '0'){
                 $("#progress-percent").text(parseInt(response * 100) + "%");
                 $("#progress").css('width', (parseInt(response * 100)) + "%");
             }
