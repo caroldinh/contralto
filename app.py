@@ -34,6 +34,7 @@ def submit_link():
 
 @app.route('/<playlist_id>')
 def analyze_playlist(playlist_id):
+    analyzers[playlist_id] = None 
     analyzers[playlist_id] = PlaylistAnalyzer(playlist_id)
     analyzers[playlist_id].start()
     return render_template('loading.html', id=playlist_id)
@@ -41,7 +42,10 @@ def analyze_playlist(playlist_id):
 @app.route('/analyzer-progress/<playlist_id>')
 def get_progress(playlist_id):
     global analyzer
-    return str(analyzers[playlist_id].progress)
+    if(playlist_id in analyzers):
+        return str(analyzers[playlist_id].progress)
+    else:
+        return "0"
 
 @app.route('/analyzer-result/<playlist_id>')
 def get_analyzer_result(playlist_id):
