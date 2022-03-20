@@ -4,7 +4,7 @@ window.onload = function checkProgress(){
     pageUrl = pageUrl.split('/');
     let id = pageUrl[pageUrl.length - 1];
 
-    console.log("id");
+    console.log(id);
 
     if($("#playist-name").text() == ""){
         $.ajax({
