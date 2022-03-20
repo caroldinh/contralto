@@ -4,12 +4,16 @@ window.onload = function checkProgress(){
     pageUrl = pageUrl.split('/');
     let id = pageUrl[pageUrl.length - 1];
 
+    console.log("id");
+
     if($("#playist-name").text() == ""){
         $.ajax({
             url: "/" + id + "/info/",
             type: "get",
             success: function(response) {
-                $("#playlist-name").text("Playlist: " + response.name);
+                if(response.name != undefined){
+                    $("#playlist-name").text("Playlist: " + response.name);
+                }
             },
             error: function(xhr) {
                 //Do Something to handle error
@@ -22,8 +26,10 @@ window.onload = function checkProgress(){
         url: "/analyzer-progress/" + id,
         type: "get",
         success: function(response) {
-            $("#progress-percent").text(parseInt(response * 100) + "%");
-            $("#progress").css('width', (parseInt(response * 100)) + "%");
+            if(response != undefined){
+                $("#progress-percent").text(parseInt(response * 100) + "%");
+                $("#progress").css('width', (parseInt(response * 100)) + "%");
+            }
             checkProgress();
         },
         error: function(xhr) {
@@ -35,8 +41,6 @@ window.onload = function checkProgress(){
         url: "/analyzer-result/" + id,
         type: "get",
         success: function(response) {
-            $("#progress-percent").text(parseInt(response * 100) + "%");
-            $("#progress").css('width', (parseInt(response * 100)) + "%");
             window.location.href=(id + '/result/')
         },
         error: function(xhr) {

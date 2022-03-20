@@ -5,13 +5,13 @@ import sys
 import logging
 
 app = Flask(__name__)
-app.debug = True
+app.debug = False
 log = logging.getLogger('werkzeug')
 log.disabled = True
 
 analyzers = {}
 
-@app.route("/", methods=['GET'])
+@app.route('/', methods=['GET'])
 def index():
     print("started")
     return render_template('index.html')
