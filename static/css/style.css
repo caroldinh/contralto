@@ -211,7 +211,7 @@ p {
     color: var(--dark-pink);
 }
 
-#result-secton-1{
+#result-section-1{
     height: 100vh;
 }
 
@@ -254,8 +254,8 @@ p {
 }
 
 #result-section-2{
-    display: block;
     overflow: auto;
+    height: 100vh;
 }
 
 #chart-container{
@@ -628,4 +628,175 @@ a{
 
 .data-locked {
     background-color: rgba(255, 255, 255, 0.3);
+}
+
+@media (orientation: portrait) {
+
+    body {
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+    }
+
+    p {
+        font-size: 1.5em;
+    }
+
+    spacer {
+        height: 4vh;
+    }
+
+    #header-icon {
+        height: 30vh;
+        width: 30vh;
+    }
+
+    .header-image {
+        width: 80vw;
+    }
+
+    h2 {
+        font-size: 2em;
+    }
+
+    .caption {
+        font-size: 1.5em;
+    }
+
+    .progress-percent {
+        font-size: 1.5em;
+    }
+
+    #result-section-1 {
+        height: fit-content;
+        padding: 0;
+        margin-left: 0;
+        margin-right: 0;
+        margin-bottom: 10vh;
+    }
+
+    .flex-col {
+        width: 80vw;
+        margin-left: 10vw;
+    }
+
+    #result-message {
+        font-size: 3em;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+    }
+
+    #playlist-cover {
+        width: 60vw;
+        align-self: center;
+        float: center;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+    }
+
+    #display-playlist-name {
+        font-size: 1.5em;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    #display-playlist-info {
+        margin-left: 0;
+        margin-right: 0;
+        font-size: 1.25em;
+    }
+
+    #result-section-2 {
+        margin-top: 10vh !important;
+        height: fit-content !important;
+        overflow: visible !important;
+    }
+
+    #chart-container {
+        height: 60vw;
+        display: block;
+        float: center;
+        position: static;
+        width: 80% !important;
+        margin-left: 10%;
+    }
+
+    #chart-label {
+        position: static;
+        width: 80% !important;
+        font-size: 1.5em;
+        margin-left: 10%;
+        margin-right: 0;
+        align-items: center;
+    }
+
+    .label-item .dot {
+        height: 3vw;
+        width: 3vw;
+    }
+
+    .label-item p{
+        font-size: 1em;
+    }
+
+    #male-artists {
+        display: block;
+        width: 80%;
+
+    }
+
+    #underrep-artists {
+        margin-top: 0;
+        display: block;
+        width: 80%;
+        margin-left: 10%;
+    }
+
+    #mixed-gender-header {
+        display: block;
+        width: 80%;
+        margin-left: 10%;
+        margin-right: 10%;
+        text-align: center;
+    }
+
+    #mixed-gender {
+        float: left;
+        position: relative;
+        height: fit-content;
+        margin-top: 0;
+        display: block;
+        width: 80%;
+        margin-left: 10%;
+        margin-right: 10%;
+        background-color: rgba(var(--purple-rgb), 0.4);
+    }
+
+    #artist-recommendations {
+        margin-top: 4vh;
+        flex-direction: column;
+    }
+
+    .artist-rec {
+        width: 90%;
+        height: fit-content;
+        padding: 5vw;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .rec-cover {
+        width: 62vw;
+        height: 62vw;
+    }
+
+    #rec-name {
+        font-size: 3em;
+    }
+
+    #try-again {
+        margin-top: 0;
+    }
 }
