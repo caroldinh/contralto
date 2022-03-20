@@ -799,4 +799,13 @@ a{
     #try-again {
         margin-top: 0;
     }
+    
+    #header-icon-faded{ width: 15vw;
+        display: block;
+        margin: auto;
+        margin-top: 8vh;
+        margin-bottom: 4vh;
+        animation: none;
+    }
+
 }
