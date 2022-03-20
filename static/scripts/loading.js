@@ -41,7 +41,11 @@ window.onload = function checkProgress(){
         url: "/analyzer-result/" + id,
         type: "get",
         success: function(response) {
-            window.location.href=(id + '/result/')
+            if(response != ''){
+                window.location.href=(id + '/result/')
+            } else {
+                checkProgress();
+            }
         },
         error: function(xhr) {
             checkProgress();

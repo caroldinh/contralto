@@ -29,7 +29,9 @@
 </head>
 
 <body>
-  <img id="header-icon" src="{{ url_for('static', filename='images/headphones.svg') }}" alt="headphones icon">
+
+  <div id="body-section-1">
+    <img id="header-icon" src="{{ url_for('static', filename='images/headphones.svg') }}" alt="headphones icon">
     <img class="header-image" src="{{ url_for('static',filename='images/Contralto.svg') }}" alt="Contralto!">
     <h2>Whose voices are in your mix?</h2>
     <form action="/" method="post">
@@ -41,6 +43,49 @@
       </div>
     </form>
     <p class="caption orange">{{error_msg}}</p>
+  </div>
+  <div class="body-section section-text-right">
+    <h1>How it works</h1>
+    <div id="home-text">
+      <p><strong class="orange">Contralto</strong> uses the Spotify API and Last.fm to estimate who is represented in your playlist. For each playlist, Contralto provides cool stats and recommendations of female and nonbinary artists in the playlist's top genres.</p>
+      <p>Contralto's analyses are based on the pronouns present in the artist's Last.fm bio. For multi-performer acts, Contralto bases its analyses on the gender of the lead vocalist(s). If there are multiple lead vocalists of different genders, the group is categorized as "mixed-gender." <a href="https://docs.google.com/document/d/e/2PACX-1vRsGYw_GosNnwdLThCdXDf8cWKyucJM6_hfNOsCHZIlsCujj4W6v8IQBrmFtOCmISV35UJ2VT09CM7U/pub" target="_blank">More info on Contralto's categorization system.</a></p>
+      <p>Of course, sometimes these analyses are inaccurate! Contralto relies on crowdsourcing to keep our records up to date.</p>
+    </div>
+  </div>
+  <div class="body-section section-text-left">
+    <h1>Stats for nerds</h1>
+    <div id="home-text">
+      <p><a href="https://everynoise.com/gender_tldr.html" target="_blank">Spotify listening patterns by gender</a> (Source: EveryNoise)</p>
+      <p><a href="https://everynoise.com/tview.cgi?source=gender_listening_patterns" target="_blank">Gender listening patterns by genre</a> (source: EveryNoise)</p>
+      <p><a href="https://drive.google.com/file/d/1_Lr8mJCi7f43oV9KkE8iAT_fLEgW-g84/view?usp=sharing" target="_blank">Artist Gender Representation in Music Streaming</a> (Source: Spotify R&D)</p>
+      <p><a href="https://research.atspotify.com/representation-of-music-creators-on-wikipedia/" target="_blank">Representation of music creators on Wikipedia</a> (Source: Spotify R&D)</p>
+      <p><a href="https://blog.chartmetric.com/the-gender-play-gap/" target="_blank">The Gender Play Gap</a> (Source: Chartmetric)</p>
+      <p><a href="https://drive.google.com/file/d/1JRwzG-xARkJU60RFzCm91DGH8jvpx72J/view?usp=sharing" target="_blank">Counting the Music Industry: The Gender Gap</a> (Source: Vick Bain)</p>
+      <p><a href="https://makemusicequal.chartmetric.com/music-industry-pronoun-gender-tracker" target="_blank">Music Industry Pronoun & Gender Tracker</a> (Source: Chartmetric)</p>
+    </div>
+  </div>
+  <div class="body-section section-text-right">
+    <h1>Notes</h1>
+    <div id="home-text">
+      <p>Keep in mind that Contralto is only an estimator based on a single metric. Contralto was created to highlight gender disparities in music, but the gender diversity of your playlist does not determine its overall diversity (or lack thereof).<p>
+      <p><a class="pink" href="https://hellogiggles.com/news/nicki-minaj-taylor-swift-intersectionality/" target="_blank">(A little about intersectionality in music.)</a><br><a class="orange" href="https://www.oxfordhandbooks.com/view/10.1093/oxfordhb/9780199935321.001.0001/oxfordhb-9780199935321-e-36" target="_blank">(A little more.)</a></p>
+      <p>Even in terms of gender identity, Contralto cannot capture nuance in lived experience. Contralto categorizes artists based on their gender identity rather than their gender assigned at birth. A transgender man and a cisgender man would be sorted into the same category, despite the differences in their experiences. Again, Contralto is only a tool.</p>
+      <p>For those who need the reassurance: no, Contralto doesn't determine your character as a person.</p>
+      <div class="spacer"></div>
+    </div>
+  </div>
+  <div class="body-section section-text-left">
+    <h1>Support</h1>
+    <div id="home-text">
+      <p><a href="https://www.keychange.eu/" target="_blank">Keychange:</a> Global network pushing for gender equality in the music industry</p>
+      <p><a href="https://sheisthemusic.org/" target="_blank">She Is The Music:</a> Organization supporting women working in music (<a href="https://sheisthemusic.org/donate/" class="orange" target="_blank">Donate</a>)</p>
+      <p><a href="https://www.transtrenderz.com/" target="_blank">Trans Trenderz:</a> Black-owned record label for trans artists (<a class="orange" href="https://www.transtrenderz.com/donate" target="_blank">Donate</a>)</p>
+      <p><a href="https://saffronmusic.co.uk/" target="_blank">Saffron:</a> Organization providing training for music tech workers of underrepresented genders (<a href="https://saffronmusic.co.uk/donate/" class="orange" target="_blank">Donate</a>)</p>
+      <p><a href="https://www.clubqueenrecords.com/" target="_blank">Club Queen Records:</a> Record label and platform for women of color in hip-hop, pop, dance, and R&B (<a class="orange" href="https://www.clubqueenrecords.com/donations" target="_blank">Donate</a>)</p>
+      <p><a href="https://adhoc.fm/post/this-list-of-woman-and-non-binary-run-music-organizations-is-the-future-of-the-industry/" target="_blank" class="orange">List of women- and nonbinary-run music organizations and record labels</a></p>
+      <p><a href="https://ko-fi.com/cdinhart" target="_blank">Help Contralto stay online</a></p>
+    </div>
+  </div>
 
 </body>
 </html>
