@@ -33,7 +33,7 @@ window.onload = function checkProgress(){
             checkProgress();
         },
         error: function(xhr) {
-            //Do Something to handle error
+            checkProgress();
         }
         });
     } else {
@@ -44,7 +44,7 @@ window.onload = function checkProgress(){
             window.location.href=(id + '/result/')
         },
         error: function(xhr) {
-            //Do Something to handle error
+            checkProgress();
         }
         });
     }
