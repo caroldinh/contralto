@@ -284,11 +284,11 @@ def update_recs_table(rec_artist):
             row = {
                 "artist_id":rec_artist['id'],
                 "popularity":sort_artist(rec_artist),
-                "genre1": genres_list[0],
-                "genre2": genres_list[1],
-                "genre3": genres_list[2],
-                "genre4": genres_list[3],
-                "genre5": genres_list[4]
+                "genre1": escape_sql_string(genres_list[0]),
+                "genre2": escape_sql_string(genres_list[1]),
+                "genre3": escape_sql_string(genres_list[2]),
+                "genre4": escape_sql_string(genres_list[3]),
+                "genre5": escape_sql_string(genres_list[4])
             }
             query = f"INSERT INTO recs (artist_id, popularity, genre1, genre2, genre3, genre4, genre5) VALUES " + \
                 f"('{row['artist_id']}', '{row['popularity']}', '{row['genre1']}', '{row['genre2']}', '{row['genre3']}', " + \
@@ -298,7 +298,7 @@ def update_recs_table(rec_artist):
         # Otherwise, update the recommendation's existing row
         else:
             new_pop = sort_artist(rec_artist)
-            query = f"UPDATE recs SET popularity={new_pop} " + \
+            query = f"UPDATE recs SET popularity='{new_pop}' " + \
                 f"WHERE artist_id='{rec_artist['id']}'"
             execute_query(query)
 
