@@ -17,3 +17,6 @@ keys.txt
 
 .cache
 *.csv
+
+backup_artists.py
+update_from_csv.py

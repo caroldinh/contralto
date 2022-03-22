@@ -5,7 +5,7 @@ from psycopg2 import OperationalError
 import os
 import threading
 import random
-import re
+# import pandas as pd
 
 connection = None
 FUNDAMENTAL_GENRES = ['classical', 'country', 'edm', 'folk', 'hiphop', 'jazz', 'latin', 'rap', 'rock']
@@ -210,14 +210,7 @@ class PlaylistAnalyzer(threading.Thread):
 # Determine the gender of an artist
 def analyze(artist_json):
 
-    """
-    # Connect to the SQL database
-    global connection
-    connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
-    connection.autocommit = True
-    """
-    
-    # Query that database to check the gender of the artist
+    # Query the database to check the gender of the artist
     id = artist_json['id']
     artist = artist_json['name']
     result = analyze_from_database(id)
@@ -228,7 +221,10 @@ def analyze(artist_json):
 
     # If we didn't get a result, determine the artist's gender by analyzing their last.fm bio
     if(result == "UND"):
-        result = analyze_via_crawl(id, artist)
+        result = analyze_from_chartmetric(artist)
+    
+        if(result == "UND"):
+            result = analyze_via_crawl(id, artist)
 
         check_if_exists = execute_read_query(f"SELECT * FROM artists WHERE spotify_id='{id}'")
         query = ""
@@ -243,7 +239,7 @@ def analyze(artist_json):
         else:
             query = f"UPDATE artists SET consensus='{result}', picture='{artist_image}', popularity='{popularity}' WHERE spotify_id='{id}'"
         execute_query(query)
-    
+        
     # If we did get a result, make sure the image and popularity are up-to-date
     else:
         query = f"UPDATE artists SET picture='{artist_image}', popularity='{popularity}' WHERE spotify_id='{id}'"
@@ -526,6 +522,14 @@ def analyze_from_database(id):
     else:
         return result[0]
 
+def analyze_from_chartmetric(name):
+    result = execute_read_query(f"SELECT * FROM chartmetric WHERE name='{name}'")
+    if(result == None):
+        return "UND"
+    else:
+        execute_query(f"DELETE from chartmetric WHERE name='{name}'")
+        return result
+
 def update_result(artists_list, updates_json):
     for category in artists_list:
         artists_popped = []
@@ -547,6 +551,18 @@ def update_result(artists_list, updates_json):
         for id in artists_popped:
             artists_list[category].pop(id)
     return artists_list
+
+def get_unlocked(artists_list):
+    artists_unlocked = artists_list
+    for category in artists_list:
+        print(category)
+        for id in category:
+            print(id)
+            locked = execute_read_query(f"SELECT locked FROM artists WHERE spotify_id='{id}'")
+            print(locked)
+            if(locked == 1):
+                artists_unlocked[category].pop(id)
+    return artists_unlocked
 
 def escape_sql_string(string):
     return string.replace('\0', '\\0').replace('\'', '\'\'').replace('\"', '\"\"').replace('\b', '\\b') \
