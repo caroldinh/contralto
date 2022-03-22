@@ -60,7 +60,7 @@ class PlaylistAnalyzer(threading.Thread):
 
         total = 0
         underrepresented = 0
-        artists_checked = {}
+        # artists_checked = {}
 
         BASE_URL = 'https://api.spotify.com/v1/playlists/{playlist_id}'
         self.playlist = requests.get(BASE_URL.format(playlist_id=self.id), headers=headers).json()
@@ -71,13 +71,38 @@ class PlaylistAnalyzer(threading.Thread):
             current_track = 0
             artist_result = 'UND'
 
+            all_artists={}
+
             # Start looping through all songs
             for track in tracks['items']:
                 track_artists = track['track']['artists']
                 for artist in track_artists:
                     total += 1
-                    artist_info = requests.get(artist['href'], headers=headers).json()
-                    artist_id = artist_info['id']
+                    #artist_info = requests.get(artist['href'], headers=headers).json()
+                    artist_id = artist['id']
+                    if artist_id in all_artists:
+                        all_artists[artist_id] += 1
+                    else:
+                        all_artists[artist_id] = 1
+                    
+            artist_ids = list(all_artists.keys())
+            #print(artist_ids)
+            while(len(artist_ids) > 0):
+                batch = artist_ids[0]
+                artist_ids.pop(0)
+                count = 1
+                while(count < 50 and len(artist_ids) > 0):
+                    batch += "," + artist_ids[0]
+                    artist_ids.pop(0)
+                    count += 1
+                #print(batch)
+                BASE_URL='https://api.spotify.com/v1/artists?ids={batch}'
+                artist_batch = requests.get(BASE_URL.format(batch=batch), headers=headers).json()
+                #print(artist_batch)
+                if(artist_batch != None):
+                    artist_batch = artist_batch["artists"]
+
+                for artist_info in artist_batch:
                     genres = artist_info['genres']
 
                     # Keep a list of the top genres in the playlist
@@ -87,71 +112,68 @@ class PlaylistAnalyzer(threading.Thread):
                         elif(not genre in FUNDAMENTAL_GENRES):
                             self.genres[genre] = 1
 
-                    print(artist_info['name'])
+                    # print(artist_info['name'])
 
-                    # Track how many times the artist appears in this playlist
-                    occurrences = 1
-
+                    """
                     # If we have already checked this artist, retrieve the result we've stored for them
                     if(artist_id in artists_checked):
                         artist_result = artists_checked[artist_id]
                         if(artist_result == "F" or artist_result == "X"):
                             underrepresented += 1
-                            occurrences = self.artists['female'][artist_id]['occurrences'] + 1
-                            self.artists['female'][artist_id]['occurrences'] = occurrences
+                            # self.artists['female'][artist_id]['occurrences'] = occurrences
                         elif(artist_result == "X"):
                             underrepresented += 1
-                            occurrences = self.artists['nonbinary'][artist_id]['occurrences'] + 1
-                            self.artists['nonbinary'][artist_id]['occurrences'] = occurrences
+                            # self.artists['nonbinary'][artist_id]['occurrences'] = occurrences
                         elif(artist_result == "M"):
-                            occurrences = self.artists['male'][artist_id]['occurrences'] + 1
-                            self.artists['male'][artist_id]['occurrences'] = occurrences
+                            pass
+                            # self.artists['male'][artist_id]['occurrences'] = occurrences
                         elif(artist_result == "MIX"):
                             underrepresented += 1
-                            occurrences = self.artists['mixed_gender'][artist_id]['occurrences'] + 1
-                            self.artists['mixed_gender'][artist_id]['occurrences'] = occurrences
+                            # self.artists['mixed_gender'][artist_id]['occurrences'] = occurrences
                         else:
-                            occurrences = self.artists['undetermined'][artist_id]['occurrences'] + 1
-                            self.artists['undetermined'][artist_id]['occurrences'] = occurrences
+                            # self.artists['undetermined'][artist_id]['occurrences'] = occurrences
+                            pass
+                        artist_info["occurrances"] = all_artists[artist_info['id']]
                     else:
 
-                        # If not, analyze the artist and store the result in case the artist
-                        # appears later on the same playlist
-                        artist_result = analyze(artist_info)
-                        artist_info['occurrences'] = 1
-                        if(artist_result == "F" or artist_result == "X"):
-                            underrepresented += 1
-                            self.artists['female'][artist['id']] = artist_info
-                        elif(artist_result == "X"):
-                            underrepresented += 1
-                            self.artists['nonbinary'][artist['id']] = artist_info
-                        elif(artist_result == "M"):
-                            self.artists['male'][artist['id']] = artist_info
-                        elif(artist_result == "MIX"):
-                            self.artists['mixed_gender'][artist['id']] = artist_info
-                        else:
-                            self.artists['undetermined'][artist['id']] = artist_info
-                        artists_checked[artist_id] = artist_result
+                    """
 
-                    print("RESULT: " + artist_result)
-                    print()
-                current_track += 1
+                    # If not, analyze the artist and store the result in case the artist
+                    # appears later on the same playlist
+                    artist_result = analyze(artist_info)
+                    artist_info['occurrences'] = all_artists[artist_info['id']]
+                    if(artist_result == "F" or artist_result == "X"):
+                        underrepresented += artist_info['occurrences']
+                        self.artists['female'][artist_info['id']] = artist_info
+                    elif(artist_result == "X"):
+                        underrepresented += artist_info['occurrences']
+                        self.artists['nonbinary'][artist_info['id']] = artist_info
+                    elif(artist_result == "M"):
+                        self.artists['male'][artist_info['id']] = artist_info
+                    elif(artist_result == "MIX"):
+                        underrepresented += artist_info['occurrences']
+                        self.artists['mixed_gender'][artist_info['id']] = artist_info
+                    else:
+                        self.artists['undetermined'][artist_info['id']] = artist_info
+                    # artists_checked[artist_id] = artist_result
 
-                # Update the progress of the playlist
-                self.progress = 0.95 * (current_track / total_tracks)
+                    # print("RESULT: " + artist_result)
+                    # print()
+                    current_track += 1
+
+                    # Update the progress of the playlist
+                    self.progress = 0.95 * (current_track / total_tracks)
             
             self.result = str(round((underrepresented / total) * 100, 1))
 
             # Start generating recommendations for the playlist
             rec_possible = True
             self.num_recs = 0
-            exclude = list(artists_checked.keys())
+            exclude = list(all_artists.keys())
 
             # Create a sorted list of the top genres
             genres_ordered = dict(sorted(self.genres.items(), key=lambda item: item[1]))
-            print(genres_ordered)
             top_genres = list(genres_ordered.keys())[-3:]
-            print(top_genres)
 
             # Get a mainstream artist, an emerging artist, and an obscure artist
             for popularity in self.recs:
@@ -178,7 +200,7 @@ class PlaylistAnalyzer(threading.Thread):
 
                         # If a recommendation still isn't possible, return an empty list
                         if(rec == None):
-                            print("Rec not possible")
+                            # print("Rec not possible")
                             rec = ["", "", "", "", 0]
 
                             # At this point, note that it isn't possible to generate a recommendation from this playlist
@@ -344,7 +366,7 @@ def generate_rec(genre, exclude, popularity=None):
             rec_id = random.choice(recs_table)
     if(len(recs_table) == 0):
         return None
-    print(rec_id)
+    # print(rec_id)
     rec_artist = execute_read_query(f"SELECT spotify_id, name, popularity, picture FROM artists WHERE spotify_id='{rec_id[0]}'")
     return rec_artist
     
@@ -523,11 +545,12 @@ def analyze_from_database(id):
         return result[0]
 
 def analyze_from_chartmetric(name):
-    result = execute_read_query(f"SELECT * FROM chartmetric WHERE name='{name}'")
+    escaped_name = escape_sql_string(name)
+    result = execute_read_query(f"SELECT * FROM chartmetric WHERE name='{escaped_name}'")
     if(result == None):
         return "UND"
     else:
-        execute_query(f"DELETE from chartmetric WHERE name='{name}'")
+        execute_query(f"DELETE from chartmetric WHERE name='{escaped_name}'")
         return result
 
 def update_result(artists_list, updates_json):
@@ -555,11 +578,11 @@ def update_result(artists_list, updates_json):
 def get_unlocked(artists_list):
     artists_unlocked = artists_list
     for category in artists_list:
-        print(category)
+        # print(category)
         for id in category:
-            print(id)
+            # print(id)
             locked = execute_read_query(f"SELECT locked FROM artists WHERE spotify_id='{id}'")
-            print(locked)
+            # print(locked)
             if(locked == 1):
                 artists_unlocked[category].pop(id)
     return artists_unlocked
