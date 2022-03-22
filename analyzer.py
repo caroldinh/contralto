@@ -140,7 +140,11 @@ class PlaylistAnalyzer(threading.Thread):
 
                     # If not, analyze the artist and store the result in case the artist
                     # appears later on the same playlist
-                    artist_result = analyze(artist_info)
+                    artist_result = "UND"
+                    try:
+                        artist_result = analyze(artist_info)
+                    except Exception as e:
+                        print(str(e))
                     artist_info['occurrences'] = all_artists[artist_info['id']]
                     if(artist_result == "F" or artist_result == "X"):
                         underrepresented += artist_info['occurrences']
