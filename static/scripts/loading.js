@@ -30,7 +30,7 @@ window.onload = function checkProgress(){
                 $("#progress-percent").text(parseInt(response * 100) + "%");
                 $("#progress").css('width', (parseInt(response * 100)) + "%");
             }
-            checkProgress();
+            setTimeout(checkProgress, 1000);
         },
         error: function(xhr) {
             checkProgress();

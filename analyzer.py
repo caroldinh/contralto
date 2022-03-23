@@ -527,7 +527,7 @@ def analyze_from_database(id):
 
 def analyze_from_chartmetric(name):
     escaped_name = escape_sql_string(name)
-    result = execute_read_query(f"SELECT * FROM chartmetric WHERE name='{escaped_name}'")
+    result = execute_read_query(f"SELECT result FROM chartmetric WHERE name='{escaped_name}'")
     if(result == None):
         return "UND"
     else:
