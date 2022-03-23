@@ -438,7 +438,6 @@ p {
     width: 80vw;
     margin-right: 10vw;
     margin-left: 10vw;
-    margin-bottom: 15vh;
     transition: 0.3s;
 }
 
@@ -479,6 +478,7 @@ p {
 }
 
 #result-section-4 {
+    margin-top: 15vh;
     padding-top: 3vh;
     scroll-snap-align: center;
 }

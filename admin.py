@@ -1,3 +1,4 @@
+from glob import escape
 from flask import Flask, request, render_template
 import logging
 from analyzer import execute_query, execute_read_multiple_query, execute_read_query, escape_sql_string
@@ -22,11 +23,26 @@ def admin_change_artists():
     update_artists(request.json, admin=True)
     return request.json
 
-def get_all_artists(playlist=None, clean=False):
+@app.route('/<artist_name>/')
+def get_specific_artists(artist_name):
+    all_artists = get_all_artists(name=artist_name)
+    return render_template('admin.html', artists=all_artists)
+
+@app.route('/<artist_name>/', methods=['POST'])
+def change_specific_artists(artist_name):
+    update_artists(request.json, admin=True)
+    return request.json
+
+def get_all_artists(playlist=None, clean=False, name=None):
     all_artists_dict = {}
     if(playlist == None):
 
-        all_artists = execute_read_multiple_query("SELECT * from artists")
+        all_artists = []
+        if(name == None):
+            all_artists = execute_read_multiple_query("SELECT * from artists")
+        else:
+            escaped_name = escape_sql_string(name).lower()
+            all_artists = execute_read_multiple_query(f"SELECT * from artists WHERE lower(name)='{escaped_name}'")
         for artist in all_artists:
             artist_dict = {
                 "id": artist[0],
