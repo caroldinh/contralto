@@ -121,7 +121,7 @@ class PlaylistAnalyzer(threading.Thread):
                     except Exception as e:
                         print(str(e))
                     artist_info['occurrences'] = all_artists[artist_info['id']]
-                    if(artist_result == "F" or artist_result == "X"):
+                    if(artist_result == "F"):
                         underrepresented += artist_info['occurrences']
                         self.artists['female'][artist_info['id']] = artist_info
                     elif(artist_result == "X"):
