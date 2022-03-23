@@ -64,11 +64,11 @@ class PlaylistAnalyzer(threading.Thread):
 
         BASE_URL = 'https://api.spotify.com/v1/playlists/{playlist_id}'
         self.playlist = requests.get(BASE_URL.format(playlist_id=self.id), headers=headers).json()
-
-        tracks = self.playlist['tracks']
+        tracks = []
+        if(self.playlist != None and 'tracks' in self.playlist):
+            tracks = self.playlist['tracks']
         if('items' in tracks):
-            total_tracks = len(tracks['items'])
-            current_track = 0
+            # total_tracks = len(tracks['items'])
             artist_result = 'UND'
 
             all_artists={}
@@ -87,6 +87,7 @@ class PlaylistAnalyzer(threading.Thread):
                     
             artist_ids = list(all_artists.keys())
             #print(artist_ids)
+            progress_count = 0
             while(len(artist_ids) > 0):
                 batch = artist_ids[0]
                 artist_ids.pop(0)
@@ -137,10 +138,10 @@ class PlaylistAnalyzer(threading.Thread):
 
                     # print("RESULT: " + artist_result)
                     # print()
-                    current_track += 1
+                    progress_count += 1
 
                     # Update the progress of the playlist
-                    self.progress = 0.95 * (current_track / total_tracks)
+                    self.progress = 0.95 * (progress_count / total)
             
             self.result = str(round((underrepresented / total) * 100, 1))
 
@@ -166,20 +167,20 @@ class PlaylistAnalyzer(threading.Thread):
                     # If a recommendation cannot be generated, go to the next artist
                     # And loop until we've checked all artists in the playlist
                     while(rec == None and genre_index != (genre_start_index - 1) % len(top_genres)):
-                        rec = generate_rec(top_genres[genre_index], exclude, popularity)
+                        rec = generate_rec(exclude, top_genres[genre_index], popularity)
                         genre_index = (genre_index + 1) % len(top_genres)
 
                     # If we couldn't get a recommendation, repeat the same process but disregard the popularity level
                     if(rec == None):
                         genre_index = genre_start_index
                         while(rec == None and genre_index != (genre_start_index - 1) % len(top_genres)):
-                            rec = generate_rec(top_genres[genre_index], exclude)
+                            rec = generate_rec(exclude, top_genres[genre_index])
                             genre_index = (genre_index + 1) % len(top_genres)
 
                         # If a recommendation still isn't possible, return an empty list
                         if(rec == None):
                             # print("Rec not possible")
-                            rec = ["", "", "", "", 0]
+                            rec = generate_rec(exclude)
 
                             # At this point, note that it isn't possible to generate a recommendation from this playlist
                             # so don't bother to go through that whole process for the remaining recommendations
@@ -193,7 +194,7 @@ class PlaylistAnalyzer(threading.Thread):
                         self.num_recs += 1
                         exclude.append(rec[0]) # Excludes duplicate recommendations
                 else:
-                    rec = ["", "", "", "", 0]
+                    rec = generate_rec(exclude)
                 self.recs[popularity] = rec
             
             self.progress = 1
@@ -308,7 +309,7 @@ def sort_artist(artist):
         return '0-30'
 
 # Generate a recommendation based on an artist and a playlist
-def generate_rec(genre, exclude, popularity=None):
+def generate_rec(exclude, genre=None, popularity=None):
 
     create_recs_table = f"""
         CREATE TABLE IF NOT EXISTS recs (
@@ -326,13 +327,15 @@ def generate_rec(genre, exclude, popularity=None):
     genre = escape_sql_string(genre)
 
     recs_table = None
-    if(popularity == None):
+    if(popularity == None and genre != None):
         # Retrieves a list of one-element tuples (ID of recommendation)
         recs_table = execute_read_multiple_query(f"SELECT artist_id FROM recs WHERE genre1='{genre}' OR genre2='{genre}' " + \
             f" OR genre3='{genre}' OR genre4='{genre}' OR genre5='{genre}'")
-    else:
+    elif(popularity != None and genre != None):
         recs_table = execute_read_multiple_query(f"SELECT artist_id FROM recs WHERE genre1='{genre}' OR genre2='{genre}' " + \
             f" OR genre3='{genre}' OR genre4='{genre}' OR genre5='{genre}' AND popularity='{popularity}'")
+    else:
+        recs_table = execute_read_query(f"SELECT artist_id FROM recs ORDER BY RAND() LIMIT 20")
     
     if(recs_table == None or len(recs_table) == 0):
         return None
@@ -566,9 +569,12 @@ def get_unlocked(artists_list):
     return artists_unlocked
 
 def escape_sql_string(string):
-    return string.replace('\0', '\\0').replace('\'', '\'\'').replace('\"', '\"\"').replace('\b', '\\b') \
-        .replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace('\Z', '\\Z').replace('\\', '\\\\') \
-        .replace('%', '\%').replace('_', '\_')
+    if(string != None):
+        return string.replace('\0', '\\0').replace('\'', '\'\'').replace('\"', '\"\"').replace('\b', '\\b') \
+            .replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace('\Z', '\\Z').replace('\\', '\\\\') \
+            .replace('%', '\%').replace('_', '\_')
+    else:
+        return ""
 
 # Execute SQL query
 def execute_query(query):
