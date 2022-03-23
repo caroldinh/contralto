@@ -112,32 +112,6 @@ class PlaylistAnalyzer(threading.Thread):
                         elif(not genre in FUNDAMENTAL_GENRES):
                             self.genres[genre] = 1
 
-                    # print(artist_info['name'])
-
-                    """
-                    # If we have already checked this artist, retrieve the result we've stored for them
-                    if(artist_id in artists_checked):
-                        artist_result = artists_checked[artist_id]
-                        if(artist_result == "F" or artist_result == "X"):
-                            underrepresented += 1
-                            # self.artists['female'][artist_id]['occurrences'] = occurrences
-                        elif(artist_result == "X"):
-                            underrepresented += 1
-                            # self.artists['nonbinary'][artist_id]['occurrences'] = occurrences
-                        elif(artist_result == "M"):
-                            pass
-                            # self.artists['male'][artist_id]['occurrences'] = occurrences
-                        elif(artist_result == "MIX"):
-                            underrepresented += 1
-                            # self.artists['mixed_gender'][artist_id]['occurrences'] = occurrences
-                        else:
-                            # self.artists['undetermined'][artist_id]['occurrences'] = occurrences
-                            pass
-                        artist_info["occurrances"] = all_artists[artist_info['id']]
-                    else:
-
-                    """
-
                     # If not, analyze the artist and store the result in case the artist
                     # appears later on the same playlist
                     artist_result = "UND"
