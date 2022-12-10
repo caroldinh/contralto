@@ -5,7 +5,7 @@ import sys
 import logging
 
 app = Flask(__name__)
-app.debug = False
+app.debug = True
 log = logging.getLogger('werkzeug')
 log.disabled = True
 

@@ -60,15 +60,14 @@ class PlaylistAnalyzer(threading.Thread):
 
         total = 0
         underrepresented = 0
-        # artists_checked = {}
 
+        # Request playlist information
         BASE_URL = 'https://api.spotify.com/v1/playlists/{playlist_id}'
         self.playlist = requests.get(BASE_URL.format(playlist_id=self.id), headers=headers).json()
         tracks = []
         if(self.playlist != None and 'tracks' in self.playlist):
             tracks = self.playlist['tracks']
         if('items' in tracks):
-            # total_tracks = len(tracks['items'])
             artist_result = 'UND'
 
             all_artists={}
@@ -78,7 +77,6 @@ class PlaylistAnalyzer(threading.Thread):
                 track_artists = track['track']['artists']
                 for artist in track_artists:
                     total += 1
-                    #artist_info = requests.get(artist['href'], headers=headers).json()
                     artist_id = artist['id']
                     if artist_id in all_artists:
                         all_artists[artist_id] += 1
@@ -86,9 +84,10 @@ class PlaylistAnalyzer(threading.Thread):
                         all_artists[artist_id] = 1
                     
             artist_ids = list(all_artists.keys())
-            #print(artist_ids)
             progress_count = 0
             while(len(artist_ids) > 0):
+
+                # Group artists into batches of 50
                 batch = artist_ids[0]
                 artist_ids.pop(0)
                 count = 1
@@ -96,10 +95,10 @@ class PlaylistAnalyzer(threading.Thread):
                     batch += "," + artist_ids[0]
                     artist_ids.pop(0)
                     count += 1
-                #print(batch)
+
+                # Request information from a batch of artists
                 BASE_URL='https://api.spotify.com/v1/artists?ids={batch}'
                 artist_batch = requests.get(BASE_URL.format(batch=batch), headers=headers).json()
-                #print(artist_batch)
                 if(artist_batch != None):
                     artist_batch = artist_batch["artists"]
 
@@ -113,8 +112,7 @@ class PlaylistAnalyzer(threading.Thread):
                         elif(not genre in FUNDAMENTAL_GENRES):
                             self.genres[genre] = 1
 
-                    # If not, analyze the artist and store the result in case the artist
-                    # appears later on the same playlist
+                    # Analyze and classify artist
                     artist_result = "UND"
                     try:
                         artist_result = analyze(artist_info)
@@ -134,9 +132,8 @@ class PlaylistAnalyzer(threading.Thread):
                         self.artists['mixed_gender'][artist_info['id']] = artist_info
                     else:
                         self.artists['undetermined'][artist_info['id']] = artist_info
-                    # artists_checked[artist_id] = artist_result
 
-                    # print("RESULT: " + artist_result)
+                    print("RESULT: " + artist_result)
                     # print()
                     progress_count += 1
 
