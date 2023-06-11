@@ -11,7 +11,12 @@ log.disabled = True
 @app.route('/')
 def admin_all_artists():
     all_artists = get_all_artists()
-    return render_template('admin.html', artists=all_artists)
+    return render_template('admin.html', artists=all_artists, page=0)
+
+@app.route('/page/<page>/')
+def admin_artists_range(page):
+    all_artists = get_all_artists(range=[int(page) * 100, (int(page) + 1) * 100])
+    return render_template('admin.html', artists=all_artists, page=int(page))
 
 @app.route('/clean/')
 def admin_clean_all_artists():
@@ -23,23 +28,27 @@ def admin_change_artists():
     update_artists(request.json, admin=True)
     return request.json
 
-@app.route('/<artist_name>/')
+@app.route('/artist/<artist_name>/')
 def get_specific_artists(artist_name):
     all_artists = get_all_artists(name=artist_name)
     return render_template('admin.html', artists=all_artists)
 
-@app.route('/<artist_name>/', methods=['POST'])
+@app.route('/artist/<artist_name>/', methods=['POST'])
 def change_specific_artists(artist_name):
     update_artists(request.json, admin=True)
     return request.json
 
-def get_all_artists(playlist=None, clean=False, name=None):
+def get_all_artists(playlist=None, clean=False, name=None, range=None):
     all_artists_dict = {}
     if(playlist == None):
-
         all_artists = []
+        limit = ""
+        if (range == None):
+            limit = "limit 100"
+        else: 
+            limit = f"limit {range[1] - range[0]} offset {range[0]}"
         if(name == None):
-            all_artists = execute_read_multiple_query("SELECT * from artists")
+            all_artists = execute_read_multiple_query(f"SELECT * from artists {limit}")
         else:
             escaped_name = escape_sql_string(name).lower()
             all_artists = execute_read_multiple_query(f"SELECT * from artists WHERE lower(name)='{escaped_name}'")

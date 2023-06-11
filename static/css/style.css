@@ -571,6 +571,8 @@ p {
 }
 
 .artist-data-name{
+    font-family: var(--body-font);
+    font-weight: normal;
     vertical-align: middle; 
     font-size: 1.5em;
     color: var(--text-color-light);
@@ -607,7 +609,7 @@ p {
 #done{
     position: fixed;
     right: 5vw;
-    bottom: 5vh;
+    top: 5vh;
     background-color: var(--dark-pink);
     color: white;
     font-family: var(--body-font);
@@ -619,10 +621,35 @@ p {
     box-shadow: var(--dark-pink);
 }
 
-#done:hover{
+.pagenav-btn{
+    width: fit-content;
+    position: fixed;
+    right: 5vw;
+    bottom: 5vh;
+    background-color: var(--orange);
+    color: white;
+    font-family: var(--body-font);
+    border: none;
+    border-radius: 3vh;
+    font-size: 1.5em;
+    padding: 1vh;
+    transition: 0.3s;
+    box-shadow: var(--dark-pink);
+}
+
+#next {
+    right: 5vw;
+}
+
+#prev {
+    left: 5vw;
+}
+
+.admin-btn:hover{
     cursor: pointer;
     filter: brightness(0.7);
 }
+
 
 .lock-artist{
     vertical-align: middle; 

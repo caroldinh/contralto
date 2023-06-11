@@ -33,7 +33,7 @@
   <div id="data-container">
     {% for artist in artists %}
         <div id="data-{{artist}}" class="artist-data {% if artists[artist]['locked'] == 1 %} data-locked {% endif %}">
-          <p class="artist-data-name">{{artists[artist]['name']}}</p>
+          <a class="artist-data-name" href="https://open.spotify.com/artist/{{artists[artist]['id']}}" target="_blank">{{artists[artist]['name']}}</a>
           <select name="category" id="{{artist}}-select-category" class="category-select" 
             onchange="changeVal('{{artist}}')">
             <option value="M" {% if artists[artist]['consensus'] == 'M' %} selected {% endif %}>Male</option>
@@ -51,7 +51,13 @@
     {% endfor %}
   </div>
 
-  <button id="done" method="POST" onclick="submit()">Done</button>
+  <button id="done" class="admin-btn" method="POST" onclick="submit()">Done</button>
+  {% if page != None %}
+    {% if page != 0 %}
+      <a id="prev" class="admin-btn pagenav-btn" href="/page/{{ (page - 1) }}">Prev</a>
+    {% endif %}
+    <a id="next" class="admin-btn pagenav-btn" href="/page/{{ (page + 1) }}">Next</a>
+  {% endif %}
 
 </body>
 
