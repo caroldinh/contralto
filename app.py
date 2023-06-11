@@ -25,7 +25,9 @@ def submit_link():
         or url.startswith('https://open.spotify.com/playlist/') \
         or url.startswith('http://open.spotify.com/playlist/'):
             start_index = url.index('open.spotify.com/playlist/') + len('open.spotify.com/playlist/')
-            end_index = url.index('?si=')
+            end_index = len(url)
+            if '?si=' in url:
+                end_index = url.index('?si=')
             id = url[start_index:end_index]
             return redirect(id)
     else:

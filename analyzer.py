@@ -577,7 +577,12 @@ def escape_sql_string(string):
 def execute_query(query):
     global connection
     if(connection == None):
-        connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
+        # connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
+        connection = psycopg2.connect(
+            host=os.getenv('DB_HOST'),
+            database="postgres",
+            user="postgres",
+            password=os.getenv('DB_PASSWORD'))
         connection.autocommit = True
     cursor = connection.cursor()
     try:
@@ -589,7 +594,11 @@ def execute_query(query):
 def execute_read_query(query):
     global connection
     if(connection == None):
-        connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
+        connection = psycopg2.connect(
+            host=os.getenv('DB_HOST'),
+            database="postgres",
+            user="postgres",
+            password=os.getenv('DB_PASSWORD'))
         connection.autocommit = True
     cursor = connection.cursor()
     result = None
@@ -604,7 +613,11 @@ def execute_read_query(query):
 def execute_read_multiple_query(query):
     global connection
     if(connection == None):
-        connection = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
+        connection = psycopg2.connect(
+            host=os.getenv('DB_HOST'),
+            database="postgres",
+            user="postgres",
+            password=os.getenv('DB_PASSWORD'))
         connection.autocommit = True
     cursor = connection.cursor()
     result = None
