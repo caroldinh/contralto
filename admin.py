@@ -21,7 +21,7 @@ def admin_artists_range(page):
 @app.route('/clean/')
 def admin_clean_all_artists():
     all_artists = get_all_artists(clean=True)
-    return render_template('admin.html', artists=all_artists)
+    return render_template('admin.html', artists=all_artists, page=0)
 
 @app.route('/', methods=['POST'])
 def admin_change_artists():
@@ -31,7 +31,7 @@ def admin_change_artists():
 @app.route('/artist/<artist_name>/')
 def get_specific_artists(artist_name):
     all_artists = get_all_artists(name=artist_name)
-    return render_template('admin.html', artists=all_artists)
+    return render_template('admin.html', artists=all_artists, page=0)
 
 @app.route('/artist/<artist_name>/', methods=['POST'])
 def change_specific_artists(artist_name):
