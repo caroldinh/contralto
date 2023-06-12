@@ -103,6 +103,7 @@ def change_artists(playlist_id):
         return redirect(url_for('display_result', playlist_id=playlist_id))
     else:
         return redirect(url_for('analyze_playlist', playlist_id=playlist_id))
+    # TODO: Update percentage on top of page
 
 if __name__ == '__main__':
     app.run(threaded=True)

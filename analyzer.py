@@ -134,7 +134,6 @@ class PlaylistAnalyzer(threading.Thread):
                         self.artists['undetermined'][artist_info['id']] = artist_info
 
                     print("RESULT: " + artist_result)
-                    # print()
                     progress_count += 1
 
                     # Update the progress of the playlist
@@ -176,7 +175,6 @@ class PlaylistAnalyzer(threading.Thread):
 
                         # If a recommendation still isn't possible, return an empty list
                         if(rec == None):
-                            # print("Rec not possible")
                             rec = generate_rec(exclude)
 
                             # At this point, note that it isn't possible to generate a recommendation from this playlist
@@ -332,20 +330,25 @@ def generate_rec(exclude, genre=None, popularity=None):
         recs_table = execute_read_multiple_query(f"SELECT artist_id FROM recs WHERE genre1='{genre}' OR genre2='{genre}' " + \
             f" OR genre3='{genre}' OR genre4='{genre}' OR genre5='{genre}' AND popularity='{popularity}'")
     else:
-        recs_table = execute_read_query(f"SELECT artist_id FROM recs ORDER BY RAND() LIMIT 20")
+        recs_table = execute_read_query(f"SELECT artist_id FROM recs ORDER BY RAND() LIMIT 50")
     
     if(recs_table == None or len(recs_table) == 0):
         return None
 
     rec_id = random.choice(recs_table)
-    while(len(recs_table) > 0 and rec_id[0] in exclude):
+    rec_artist = execute_read_query(f"SELECT spotify_id, name, popularity, picture, consensus FROM artists WHERE spotify_id='{rec_id[0]}'")
+
+    # If the recommendation is already in the playlist, or the recommendation is incorrect (category M or UND), remove it and try again
+    while(len(recs_table) > 0 and rec_id[0] in exclude or (rec_artist[4] == 'M' or rec_artist[4] == 'UND')):
         recs_table.remove(rec_id)
+        if (rec_artist[4] == 'M' or rec_artist[4] == "UND"):
+            execute_query(f"DELETE from recs WHERE artist_id='{rec_artist[0]}'")
         if(len(recs_table) > 0):
             rec_id = random.choice(recs_table)
+            rec_artist = execute_read_query(f"SELECT spotify_id, name, popularity, picture, consensus FROM artists WHERE spotify_id='{rec_id[0]}'")
     if(len(recs_table) == 0):
         return None
-    # print(rec_id)
-    rec_artist = execute_read_query(f"SELECT spotify_id, name, popularity, picture FROM artists WHERE spotify_id='{rec_id[0]}'")
+
     return rec_artist
     
 # Determine an artist's gender by crawling their last.fm bio
@@ -529,8 +532,14 @@ def analyze_from_chartmetric(name):
         return "UND"
     else:
         execute_query(f"DELETE from chartmetric WHERE name='{escaped_name}'")
-        return result
+        return result[0]
 
+def cast_vote(artist_id, category):
+    category_to_update = "votes_" + category.lower()
+    query = f"UPDATE artists SET {category_to_update} = {category_to_update} + 1 WHERE spotify_id='{artist_id}'"
+    execute_query(query)
+
+# Update artist category after fact-checking
 def update_result(artists_list, updates_json):
     for category in artists_list:
         artists_popped = []
@@ -539,16 +548,22 @@ def update_result(artists_list, updates_json):
                 if 'category' in updates_json[id]:
                     if(updates_json[id]['category'] == 'M'):
                         artists_list['male'][id] = artists_list[category][id]   
+                        cast_vote(id, 'M')
                         artists_popped.append(id)
                     elif(updates_json[id]['category'] == 'F'):
                         artists_list['female'][id] = artists_list[category][id]   
+                        cast_vote(id, 'F')
                         artists_popped.append(id)
                     elif(updates_json[id]['category'] == 'X'):
                         artists_list['nonbinary'][id] = artists_list[category][id]   
+                        cast_vote(id, 'X')
                         artists_popped.append(id)
                     elif(updates_json[id]['category'] == 'MIX'):
                         artists_list['mixed_gender'][id] = artists_list[category][id]   
+                        cast_vote(id, 'MIX')
                         artists_popped.append(id)
+
+        # Remove all artists from their old categories as displayed
         for id in artists_popped:
             artists_list[category].pop(id)
     return artists_list
@@ -556,11 +571,8 @@ def update_result(artists_list, updates_json):
 def get_unlocked(artists_list):
     artists_unlocked = artists_list
     for category in artists_list:
-        # print(category)
         for id in category:
-            # print(id)
             locked = execute_read_query(f"SELECT locked FROM artists WHERE spotify_id='{id}'")
-            # print(locked)
             if(locked == 1):
                 artists_unlocked[category].pop(id)
     return artists_unlocked

@@ -43,9 +43,9 @@ def get_all_artists(playlist=None, clean=False, name=None, range=None):
     if(playlist == None):
         all_artists = []
         limit = ""
-        if (range == None):
+        if (range == None and not clean):
             limit = "limit 100"
-        else: 
+        elif (not clean): 
             limit = f"limit {range[1] - range[0]} offset {range[0]}"
         if(name == None):
             all_artists = execute_read_multiple_query(f"SELECT * from artists {limit}")
